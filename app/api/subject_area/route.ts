@@ -3,7 +3,7 @@ import { createClient } from '@/utils/supabase/server'
 import { handleError } from '@/utils/errorHandler';
 
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const supabase = await createClient();
     try {
       const {

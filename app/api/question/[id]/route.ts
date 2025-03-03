@@ -3,7 +3,6 @@ import { createClient } from '@/utils/supabase/server'
 import { handleError } from '@/utils/errorHandler';
 
 export async function GET(
-  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -73,7 +72,6 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {

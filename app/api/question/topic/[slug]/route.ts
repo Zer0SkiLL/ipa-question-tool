@@ -3,7 +3,7 @@ import { createClient } from "@/utils/supabase/server";
 import { handleError } from "@/utils/errorHandler";
 
 // Get questions by topic slug (resolves ID internally)
-export async function GET(req: NextRequest, context: { params: { slug: string } }) {
+export async function GET(context: { params: { slug: string } }) {
   try {
     const supabase = await createClient();
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { handleError } from '@/utils/errorHandler';
 
-export async function GET(req: NextRequest, context: { params: { slug: string } }) {
+export async function GET(context: { params: { slug: string } }) {
   try {
     const { slug } = await context.params;
 
