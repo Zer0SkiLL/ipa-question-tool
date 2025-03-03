@@ -16,10 +16,6 @@ export const topicSchema = z.object({
 
 type TopicForm = z.infer<typeof topicSchema>;
 
-interface AddTopicFormProps {
-  onAdd: (data: TopicForm) => void;
-}
-
 export function EditTopicForm({ 
     topic, 
     onEdit 

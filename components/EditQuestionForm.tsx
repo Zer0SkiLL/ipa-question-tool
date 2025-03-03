@@ -8,7 +8,6 @@ import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
 import { Difficulty } from "@/app/model/Difficulty";
 import { cn } from "@/lib/utils";
-import { Question } from "@/app/model/Question";
 import { Badge } from "./ui/badge";
 import { X } from "lucide-react";
 import { Input } from "./ui/input";
