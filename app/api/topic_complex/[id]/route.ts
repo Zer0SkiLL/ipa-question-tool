@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { handleError } from '@/utils/errorHandler';
 
 export async function GET(req: NextRequest, context: { params: { id: string } }) {
     try {
@@ -15,10 +16,8 @@ export async function GET(req: NextRequest, context: { params: { id: string } })
 
         return NextResponse.json(data);
     } catch (error) {
-        return NextResponse.json(
-            { error: 'Error fetching topic_complex by ID' },
-            { status: 500 }
-        );
+      const errorResponse = handleError(error, 'Error fetching topic_complex by ID');
+      return NextResponse.json({ error: errorResponse.message }, { status: 500 });
     }
 }
 
@@ -44,10 +43,8 @@ export async function PATCH(req: NextRequest, context: { params: { id: string } 
 
         return NextResponse.json(data);
     } catch (error) {
-        return NextResponse.json(
-            { error: 'Error updating topic_complex' },
-            { status: 500 }
-        );
+      const errorResponse = handleError(error, 'Error updating topic_complex');
+      return NextResponse.json({ error: errorResponse.message }, { status: 500 });
     }
 }
 
@@ -68,9 +65,7 @@ export async function DELETE(
 
     return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Error deleting topic_complex' },
-      { status: 500 }
-    );
+    const errorResponse = handleError(error, 'Error deleting topic_complex');
+    return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }

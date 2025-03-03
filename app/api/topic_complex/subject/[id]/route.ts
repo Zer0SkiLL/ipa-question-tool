@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { handleError } from '@/utils/errorHandler';
 
 export async function GET(req: NextRequest, context: { params: { id: string } }) {
     try {
@@ -19,9 +20,7 @@ export async function GET(req: NextRequest, context: { params: { id: string } })
 
     return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Error fetching topics for subject' },
-      { status: 500 }
-    );
+    const errorResponse = handleError(error, 'Error fetching topics for subject');
+    return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }

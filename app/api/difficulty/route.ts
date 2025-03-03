@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { handleError } from '@/utils/errorHandler';
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,10 +13,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Error fetching difficulties' },
-      { status: 500 }
-    );
+    const errorResponse = handleError(error, 'Error fetching difficulties');
+    return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }
 
@@ -40,9 +39,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(data?.[0] ?? null);
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Error creating difficulty' },
-      { status: 500 }
-    );
+    const errorResponse = handleError(error, 'Error creating difficulty');
+    return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }

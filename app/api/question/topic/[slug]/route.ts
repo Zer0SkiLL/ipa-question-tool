@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { handleError } from "@/utils/errorHandler";
 
 // Get questions by topic slug (resolves ID internally)
 export async function GET(req: NextRequest, context: { params: { slug: string } }) {
@@ -18,18 +19,6 @@ export async function GET(req: NextRequest, context: { params: { slug: string } 
     if (topicError || !topic) {
       return NextResponse.json({ error: "Topic not found" }, { status: 404 });
     }
-
-    // 2. Fetch questions using the resolved topic ID
-    // const { data: questions, error: questionError } = await supabase
-    //   .from("question")
-    //   .select(`
-    //     *,
-    //     difficulty (*),
-    //     topic_complex (*)
-    //     category_badge (*)
-    //   `)
-    //   .eq("topic_id", topic.id);
-
 
     const { data: questions, error: questionError } = await supabase
       .from('question')
@@ -60,9 +49,7 @@ export async function GET(req: NextRequest, context: { params: { slug: string } 
       topicId: topic.id
     })
   } catch (error) {
-    return NextResponse.json(
-      { error: "Error fetching questions by topic slug" },
-      { status: 500 }
-    );
+    const errorResponse = handleError(error, 'Error fetching questions by topic slug');
+    return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }
