@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { handleError } from '@/utils/errorHandler';
 
-export async function GET(req: NextRequest, context: { params: { id: string } }) {
+export async function GET(context: { params: { id: string } }) {
   try {
     const { id } = await context.params;
 
@@ -16,10 +17,8 @@ export async function GET(req: NextRequest, context: { params: { id: string } })
 
     return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Error fetching subject_area by ID' },
-      { status: 500 }
-    );
+    const errorResponse = handleError(error, 'Error fetching subject_area by ID');
+    return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }
 
@@ -51,14 +50,12 @@ export async function PATCH(req: NextRequest, context: { params: { id: string } 
 
         return NextResponse.json(data);
     } catch (error) {
-        return NextResponse.json(
-            { error: 'Error updating subject_area' },
-            { status: 500 }
-        );
+      const errorResponse = handleError(error, 'Error updating subject_area');
+      return NextResponse.json({ error: errorResponse.message }, { status: 500 });
     }
 }
 
-export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
+export async function DELETE(context: { params: { id: string } }) {
     try {
         const { id } = await context.params;
         const supabase = await createClient();
@@ -73,9 +70,7 @@ export async function DELETE(req: NextRequest, context: { params: { id: string }
 
         return NextResponse.json(data);
     } catch (error) {
-        return NextResponse.json(
-            { error: 'Error deleting subject_area' },
-            { status: 500 }
-        );
+      const errorResponse = handleError(error, 'Error deleting subject_area');
+      return NextResponse.json({ error: errorResponse.message }, { status: 500 });
     }
 }

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { handleError } from '@/utils/errorHandler';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -12,10 +13,8 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Error fetching topic_complex' },
-      { status: 500 }
-    );
+    const errorResponse = handleError(error, 'Error fetching topic_complex');
+    return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }
 
@@ -52,9 +51,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(data?.[0] ?? null);
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Error creating topic_complex' },
-      { status: 500 }
-    );
+    const errorResponse = handleError(error, 'Error creating topic_complex');
+    return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }

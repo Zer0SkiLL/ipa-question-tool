@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { handleError } from '@/utils/errorHandler';
 
 export async function GET(
-  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -21,10 +21,8 @@ export async function GET(
 
     return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Error fetching question by ID' },
-      { status: 500 }
-    );
+    const errorResponse = handleError(error, 'Error fetching question by ID');
+    return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }
 
@@ -68,15 +66,12 @@ export async function PATCH(
 
     return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Error updating question' },
-      { status: 500 }
-    );
+    const errorResponse = handleError(error, 'Error updating question');
+    return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }
 
 export async function DELETE(
-  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -92,9 +87,7 @@ export async function DELETE(
 
     return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Error deleting question' },
-      { status: 500 }
-    );
+    const errorResponse = handleError(error, 'Error deleting question');
+    return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }

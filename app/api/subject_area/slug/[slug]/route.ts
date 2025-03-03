@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { handleError } from '@/utils/errorHandler';
 
-export async function GET(req: NextRequest, context: { params: { slug: string } }) {
+export async function GET(context: { params: { slug: string } }) {
   try {
     const { slug } = await context.params;
 
@@ -22,9 +23,7 @@ export async function GET(req: NextRequest, context: { params: { slug: string } 
 
     return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Error fetching subject_area by slug' },
-      { status: 500 }
-    );
+    const errorResponse = handleError(error, 'Error fetching subject_area by slug');
+    return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }

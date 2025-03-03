@@ -17,7 +17,7 @@ export function ComingSoon({ title, description }: ComingSoonProps) {
         <CardContent className="flex flex-col items-center">
           <CalendarClock className="w-24 h-24 text-primary mb-4" />
           <p className="text-center text-muted-foreground">
-            We're working hard to bring you this feature. Please check back later!
+            We&apos;re working hard to bring you this feature. Please check back later!
           </p>
         </CardContent>
       </Card>

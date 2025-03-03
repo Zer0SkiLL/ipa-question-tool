@@ -67,7 +67,7 @@ const PDFGenerator: React.FC<PDFGeneratorProps> = ({ fachbereich, themenkomplex,
           const cellPosY = data.cell.y;
 
           // Add a text input field in the comment column
-          const textField = new (pdf as any).AcroFormTextField();
+          const textField = new (pdf as unknown as { AcroFormTextField: new () => any }).AcroFormTextField();
           textField.Rect = [cellPosX + 2, cellPosY + 2, cellWidth - 4, cellHeight - 4];
           textField.multiline = true;
           textField.value = ''; // Initial value (empty)

@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { handleError } from '@/utils/errorHandler';
 
 
-export async function GET(req: NextRequest) {
+export async function GET() {
     const supabase = await createClient();
     try {
       const { data, error } = await supabase
         .from('apprentice')
         .select(`
+          fail,
           id,
           belongs_to,
           first_name,
@@ -24,7 +26,8 @@ export async function GET(req: NextRequest) {
       console.log(data)
       return NextResponse.json(data)
     } catch (error) {
-      return NextResponse.json({ error: 'Error fetching questions' }, { status: 500 })
+      const errorResponse = handleError(error, 'Error fetching questions');
+      return NextResponse.json({ error: errorResponse.message }, { status: 500 });
     }
   }
   
@@ -63,6 +66,7 @@ export async function GET(req: NextRequest) {
       
       return NextResponse.json(data[0])
     } catch (error) {
-      return NextResponse.json({ error: 'Error creating question' }, { status: 500 })
+      const errorResponse = handleError(error, 'Error creating question');
+      return NextResponse.json({ error: errorResponse.message }, { status: 500 });
     }
   }
