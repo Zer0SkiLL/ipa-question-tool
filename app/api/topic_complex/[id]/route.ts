@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { handleError } from '@/utils/errorHandler';
 
-export async function GET(context: { params: { id: string } }) {
+export async function GET(
+  req: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+) {
     try {
-        const { id } = await context.params;
+        const { id } = await params;
         const supabase = await createClient();
         const { data, error } = await supabase
         .from('topic_complex')
@@ -21,9 +24,12 @@ export async function GET(context: { params: { id: string } }) {
     }
 }
 
-export async function PATCH(req: NextRequest, context: { params: { id: string } }) {
+export async function PATCH(
+  req: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+) {
     try {
-        const { id } = await context.params;
+        const { id } = await params;
         const supabase = await createClient();
         const body = await req.json();
         const { name, description, subject_id } = body;
@@ -49,14 +55,16 @@ export async function PATCH(req: NextRequest, context: { params: { id: string } 
 }
 
 export async function DELETE(
-  { params }: { params: { id: string } }
+  req: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('topic_complex')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
 

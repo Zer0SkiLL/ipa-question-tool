@@ -2,15 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { handleError } from '@/utils/errorHandler';
 
+// use this approach to retreive a url param to avoid build errors
 export async function GET(
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('difficulty')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (error) throw error;
@@ -24,9 +28,10 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     const body = await req.json();
     const { name } = body;
@@ -34,7 +39,7 @@ export async function PATCH(
     const { data, error } = await supabase
       .from('difficulty')
       .update({ name })
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
 
@@ -48,14 +53,16 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('difficulty')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
 

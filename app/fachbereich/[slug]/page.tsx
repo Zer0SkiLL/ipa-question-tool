@@ -1,20 +1,16 @@
 "use client"
 
-import { use, useEffect, useState } from "react"
+import { use, useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { PlusCircle, Edit, Trash2 } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetDescription,
-  SheetFooter,
-  SheetClose,
 } from "@/components/ui/sheet"
 import {
   Dialog,
@@ -30,86 +26,36 @@ import { Themenkomplex } from "../../model/Themenkomplex"
 import { Fachbereich } from "@/app/model/Fachbereich"
 import { EditTopicForm } from "@/components/EditTopicForm"
 
-const initialThemenkomplexe: Record<string, Themenkomplex[]> = {
-  csharp: [
-    { id: "1", name: "General", description: "General C# concepts", slug: "general" },
-    { id: "2", name: "Error Handling", description: "Error handling in C#", slug: "error-handling" },
-    { id: "3", name: "Logging", description: "Logging in C# applications", slug: "logging" },
-    { id: "4", name: "LINQ", description: "Language Integrated Query", slug: "linq" },
-    { id: "5", name: "Async Programming", description: "Asynchronous programming in C#", slug: "async-programming" },
-  ],
-  testing: [
-    { id: "6", name: "Unit Testing", description: "Unit testing techniques", slug: "unit-testing" },
-    {
-      id: "7",
-      name: "Integration Testing",
-      description: "Integration testing strategies",
-      slug: "integration-testing",
-    },
-    { id: "8", name: "Test-Driven Development", description: "Test-driven development practices", slug: "tdd" },
-    { id: "9", name: "Mocking", description: "Mocking frameworks and techniques", slug: "mocking" },
-  ],
-  sql: [
-    { id: "10", name: "Basic Queries", description: "Fundamental SQL queries", slug: "basic-queries" },
-    { id: "11", name: "Joins", description: "Different types of SQL joins", slug: "joins" },
-    { id: "12", name: "Indexing", description: "Database indexing strategies", slug: "indexing" },
-    {
-      id: "13",
-      name: "Stored Procedures",
-      description: "Creating and using stored procedures",
-      slug: "stored-procedures",
-    },
-  ],
-  networking: [
-    { id: "14", name: "OSI Model", description: "Understanding the OSI model", slug: "osi-model" },
-    { id: "15", name: "TCP/IP", description: "TCP/IP protocol suite", slug: "tcp-ip" },
-    { id: "16", name: "Subnetting", description: "IP subnetting techniques", slug: "subnetting" },
-    {
-      id: "17",
-      name: "Network Security",
-      description: "Network security concepts and practices",
-      slug: "network-security",
-    },
-  ],
-  "web-development": [
-    { id: "18", name: "HTML", description: "HTML fundamentals", slug: "html" },
-    { id: "19", name: "CSS", description: "CSS styling", slug: "css" },
-    { id: "20", name: "JavaScript", description: "JavaScript programming", slug: "javascript" },
-    { id: "21", name: "React", description: "React framework", slug: "react" },
-    { id: "22", name: "Node.js", description: "Node.js runtime environment", slug: "nodejs" },
-  ],
-}
-
 export default function FachbereichPage({ params }: { params: Promise<{ slug: string }> }) {
-  const [slugParam, setSlugParam] = useState<string | null>(null)
+  // const [slugParam, setSlugParam] = useState<string | null>(null)
   const [loading, setLoading] = useState(false);
-  const [themenkomplexe, setThemenkomplexe] = useState<Themenkomplex[]>([])
+  // const [themenkomplexe, setThemenkomplexe] = useState<Themenkomplex[]>([])
   const [topics, setTopics] = useState<Themenkomplex[]>([])
   const [currentSubject, setCurrentSubject] = useState<Fachbereich | null>(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [currentThemenkomplex, setCurrentThemenkomplex] = useState<Themenkomplex | null>(null)
-  const [newThemenkomplex, setNewThemenkomplex] = useState<Omit<Themenkomplex, "id">>({
-    name: "",
-    description: "",
-    slug: "",
-  })
+  // const [newThemenkomplex, setNewThemenkomplex] = useState<Omit<Themenkomplex, "id">>({
+  //   name: "",
+  //   description: "",
+  //   slug: "",
+  // })
 
   const { slug } = use(params);
 
-  useEffect(() => {
-    if (slug) {
-      setSlugParam(slug);
-    }
-  }, [slug]);
+  // useEffect(() => {
+  //   if (slug) {
+  //     setSlugParam(slug);
+  //   }
+  // }, [slug]);
 
   useEffect(() => {
     if (!slug) return;
   
     const getSubjectBySlug = async () => {
       try {
-        const res = await fetch(`/api/subject_area/slug/${slug}`);
+        const res = await fetch(`/api/subject_area/slug/${slug}`,);
         const data = await res.json();
         setCurrentSubject(data);
         console.log("fetch subjects by slug", data);
@@ -121,28 +67,30 @@ export default function FachbereichPage({ params }: { params: Promise<{ slug: st
     getSubjectBySlug();
   }, [slug]);
 
-    const refreshTopics = async () => {
-      if (!currentSubject) return;
-
-      setLoading(true);
-    
-      try {
-        const res = await fetch(`/api/topic_complex/subject/${currentSubject.id}`);
-        const data = await res.json();
-        setTopics(data);
-        console.log("Fetched topics:", data);
-      } catch (error) {
-        console.error("Error fetching topics:", error);
-      } finally {
-        setLoading(false); // Stop loading
-      }
-    };
-    
-    useEffect(() => {
-      if (currentSubject) {
-        refreshTopics();
-      }
-    }, [currentSubject]); 
+  const refreshTopics = useCallback(async () => {
+    if (!currentSubject) return;
+  
+    console.log("Refreshing topics...");
+    console.log("Current subject:", currentSubject);
+    setLoading(true);
+  
+    try {
+      const res = await fetch(`/api/topic_complex/subject/${currentSubject.id}`);
+      const data = await res.json();
+      setTopics(data);
+      console.log("Fetched topics:", data);
+    } catch (error) {
+      console.error("Error fetching topics:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentSubject]); // Dependencies
+  
+  useEffect(() => {
+    if (currentSubject) {
+      refreshTopics();
+    }
+  }, [currentSubject, refreshTopics]);
 
   const fachbereichName = slug
     ? slug.replace(/-/g, " ")
@@ -153,7 +101,7 @@ export default function FachbereichPage({ params }: { params: Promise<{ slug: st
 
 
 
-  const handleAddTopic = async (formData: any) => {
+  const handleAddTopic = async (formData: { name: string; description: string, slug: string }) => {
     if (!currentSubject) {
       console.error("No subject selected");
       return;
@@ -185,7 +133,7 @@ export default function FachbereichPage({ params }: { params: Promise<{ slug: st
     }
   };
 
-  const handleEditTopic = async (formData: any) => {
+  const handleEditTopic = async (formData: { name: string; description: string, slug: string }) => {
     if (!currentThemenkomplex) {
       console.error("No topic selected for editing");
       return;

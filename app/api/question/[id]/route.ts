@@ -3,9 +3,11 @@ import { createClient } from '@/utils/supabase/server'
 import { handleError } from '@/utils/errorHandler';
 
 export async function GET(
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('question')
@@ -14,7 +16,7 @@ export async function GET(
           difficulty (*),
           topic_complex (*)
         `)
-      .eq('id', params.id)
+      .eq('id', id)
       .single();
 
     if (error) throw error;
@@ -28,10 +30,10 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await context.params;
+    const { id } = await params;
 
     const supabase = await createClient();
     const body = await req.json();
@@ -72,14 +74,16 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('question')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
 

@@ -2,12 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { handleError } from "@/utils/errorHandler";
 
-// Get questions by topic slug (resolves ID internally)
-export async function GET(context: { params: { slug: string } }) {
+export async function GET(
+  req: NextRequest, 
+  { params }: { params: Promise<{ slug: string }> }
+) {
   try {
-    const supabase = await createClient();
+    const { slug } = await params;
 
-    const { slug } = await context.params;
+    if (!slug) {
+      return NextResponse.json({ error: 'slug is required' }, { status: 400 });
+    }
+
+    const supabase = await createClient();
 
     // 1. Fetch the topic ID using the slug
     const { data: topic, error: topicError } = await supabase
@@ -25,27 +31,14 @@ export async function GET(context: { params: { slug: string } }) {
       .select(`
         *,
         difficulty (*),
-        topic_complex (*),
-        badges:question_category_badge(
-          id,
-          category_badge:category_badge_id(id, name)
-        )
+        topic_complex (*)
       `)
       .eq("topic_id", topic.id);
     
     if (questionError) throw questionError
     
-    // Transform the badges to a simpler format
-    const transformedQuestions = questions.map(question => ({
-      ...question,
-      badges: question.badges.map((b: { category_badge: { id: any; name: any; }; }) => ({
-        id: b.category_badge.id,
-        name: b.category_badge.name
-      }))
-    }))
-    
     return NextResponse.json({
-      questions: transformedQuestions,
+      questions: questions,
       topicId: topic.id
     })
   } catch (error) {

@@ -2,9 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { handleError } from '@/utils/errorHandler';
 
-export async function GET(context: { params: { id: string } }) {
+export async function GET(
+  req: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { id } = await context.params;
+    const { id } = await params;
 
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -22,9 +25,12 @@ export async function GET(context: { params: { id: string } }) {
   }
 }
 
-export async function PATCH(req: NextRequest, context: { params: { id: string } }) {
+export async function PATCH(
+  req: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+) {
     try {
-        const { id } = await context.params;
+        const { id } = await params;
         const supabase = await createClient();
         const body = await req.json();
         const { name, description, slug } = body;
@@ -55,9 +61,12 @@ export async function PATCH(req: NextRequest, context: { params: { id: string } 
     }
 }
 
-export async function DELETE(context: { params: { id: string } }) {
+export async function DELETE(
+  req: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+) {
     try {
-        const { id } = await context.params;
+        const { id } = await params;
         const supabase = await createClient();
         const { data, error } = await supabase
         .from('subject_area')

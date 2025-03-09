@@ -6,10 +6,18 @@ import { handleError } from '@/utils/errorHandler';
 export async function GET() {
     const supabase = await createClient();
     try {
+      const {
+        data: { user },
+        error: authError
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+          throw new Error("User not authenticated");
+      }
+
       const { data, error } = await supabase
         .from('apprentice')
         .select(`
-          fail,
           id,
           belongs_to,
           first_name,
@@ -20,6 +28,7 @@ export async function GET() {
           expert_role,
           is_active
         `)
+        .eq('belongs_to', user.id);
       
       if (error) throw error
       
