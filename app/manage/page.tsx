@@ -34,9 +34,9 @@ const initialQuestions: Item[] = [
 ]
 
 export default function ManagePage() {
-  const [fachbereiche, setFachbereiche] = useState<Item[]>(initialFachbereiche)
-  const [themenkomplexe, setThemenkomplexe] = useState<Item[]>(initialThemenkomplexe)
-  const [questions, setQuestions] = useState<Item[]>(initialQuestions)
+  const [fachbereiche] = useState<Item[]>(initialFachbereiche)
+  const [themenkomplexe] = useState<Item[]>(initialThemenkomplexe)
+  const [questions] = useState<Item[]>(initialQuestions)
 
   const renderItems = (items: Item[], editLink: string) => (
     <div className="space-y-4">

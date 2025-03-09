@@ -8,7 +8,7 @@ import { ApprenticeForm } from "@/components/ApprenticeForm"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Apprentice, ApprenticeOverview, ApprenticeOverviewForm } from "../model/Apprentice"
+import { Apprentice, ApprenticeDb, ApprenticeOverview, ApprenticeOverviewForm } from "../model/Apprentice"
 import { FeatureWrapper } from "@/components/FeatureWrapper"
 
 // interface Apprentice {
@@ -64,7 +64,7 @@ export default function ApprenticesPage() {
         console.log("Raw API Response:", data);
   
         // Map API response to match the expected state structure
-        const mappedData: ApprenticeOverview[] = data.map((apprentice: any, index: number) => ({
+        const mappedData: ApprenticeOverview[] = data.map((apprentice: ApprenticeDb) => ({
           id: apprentice.id, // Assuming API doesn't return an ID, generate one
           firstName: apprentice.first_name,
           lastName: apprentice.last_name,
@@ -186,7 +186,16 @@ export default function ApprenticesPage() {
 
   const renderApprenticeCards = (activeStatus: boolean) => (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {apprentices
+      { loading || apprentices.length === 0 ? (
+          // Skeleton Loading
+          [...Array(3)].map((_, index) => (
+            <div key={index} className="p-4 border rounded-lg animate-pulse">
+              <div className="h-6 bg-gray-300 rounded w-3/4 mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          ))
+        ) : apprentices.length > 0 ? (
+        apprentices
         .filter((a) => a.isActive === activeStatus)
         .map((apprentice) => (
           <Card key={apprentice.id} className="hover:bg-accent transition-colors relative">
@@ -224,7 +233,11 @@ export default function ApprenticesPage() {
               </CardContent>
             </Link>
           </Card>
-        ))}
+        )
+      )) : (
+        <div className="text-center text-lg">No apprentice found</div>
+      )}
+
     </div>
   )
 

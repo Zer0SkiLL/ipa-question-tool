@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { handleError } from '@/utils/errorHandler';
 
-export async function GET(req: NextRequest, context: { params: { id: string } }) {
+export async function GET(
+  req: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+) {
     try {
-        const { id } = await context.params;
+        const { id } = await params;
         const supabase = await createClient();
         const { data, error } = await supabase
         .from('topic_complex')
@@ -15,16 +19,17 @@ export async function GET(req: NextRequest, context: { params: { id: string } })
 
         return NextResponse.json(data);
     } catch (error) {
-        return NextResponse.json(
-            { error: 'Error fetching topic_complex by ID' },
-            { status: 500 }
-        );
+      const errorResponse = handleError(error, 'Error fetching topic_complex by ID');
+      return NextResponse.json({ error: errorResponse.message }, { status: 500 });
     }
 }
 
-export async function PATCH(req: NextRequest, context: { params: { id: string } }) {
+export async function PATCH(
+  req: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
+) {
     try {
-        const { id } = await context.params;
+        const { id } = await params;
         const supabase = await createClient();
         const body = await req.json();
         const { name, description, subject_id } = body;
@@ -44,23 +49,22 @@ export async function PATCH(req: NextRequest, context: { params: { id: string } 
 
         return NextResponse.json(data);
     } catch (error) {
-        return NextResponse.json(
-            { error: 'Error updating topic_complex' },
-            { status: 500 }
-        );
+      const errorResponse = handleError(error, 'Error updating topic_complex');
+      return NextResponse.json({ error: errorResponse.message }, { status: 500 });
     }
 }
 
 export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  req: NextRequest, 
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const supabase = await createClient();
     const { data, error } = await supabase
       .from('topic_complex')
       .delete()
-      .eq('id', params.id)
+      .eq('id', id)
       .select()
       .single();
 
@@ -68,9 +72,7 @@ export async function DELETE(
 
     return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Error deleting topic_complex' },
-      { status: 500 }
-    );
+    const errorResponse = handleError(error, 'Error deleting topic_complex');
+    return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }

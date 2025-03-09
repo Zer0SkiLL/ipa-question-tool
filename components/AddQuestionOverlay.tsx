@@ -38,7 +38,7 @@ export default function AddQuestionForm({
     mode: "onChange",
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting] = useState(false);
   const selectedDifficultyId = watch("difficulty");
 
   useEffect(() => {

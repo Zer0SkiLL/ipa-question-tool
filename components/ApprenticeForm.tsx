@@ -132,10 +132,8 @@
 
 
 
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -143,8 +141,10 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { ApprenticeOverviewForm } from "@/app/model/Apprentice";
+import { useForm } from "react-hook-form";
 
 const apprenticeSchema = z.object({
+  id: z.number(),
   firstName: z.string().min(2, "Firstname must be at least 2 characters"),
   lastName: z.string().min(2, "Lastname must be at least 2 characters"),
   workLocation: z.string().optional(),
@@ -185,7 +185,18 @@ export function ApprenticeForm({ apprentice, isOpen, onClose, onSubmit }: Appren
   });
 
   const handleFormSubmit = (data: ApprenticeFormValues) => {
-    onSubmit(data);
+    const mappedData: ApprenticeOverviewForm = {
+      id: data.id,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      workLocation: data.workLocation || "",
+      projectTitle: data.projectTitle || "",
+      projectDescription: data.projectDescription || "",
+      expertRole: data.expertRole,
+      projectTopics: data.projectTopics || [],
+    }
+
+    onSubmit(mappedData);
   };
 
   return (

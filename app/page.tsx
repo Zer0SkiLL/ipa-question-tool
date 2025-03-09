@@ -11,8 +11,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetDescription,
-  SheetFooter,
-  SheetClose,
 } from "@/components/ui/sheet"
 import {
   Dialog,
@@ -22,7 +20,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { z } from "zod";
 import AddSubjectForm from "@/components/AddSubjectForm"
@@ -35,19 +32,7 @@ interface Fachbereich {
   slug: string
 }
 
-export const fachbereichSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  description: z.string().min(3, "Description must be at least 3 characters"),
-  slug: z.string().regex(/^[a-z0-9-]+$/, "Slug must be lowercase with hyphens"),
-});
 
-const initialFachbereiche: Fachbereich[] = [
-  { id: "1", name: "C#", description: "C# programming language", slug: "csharp" },
-  { id: "2", name: "Testing", description: "Software testing methodologies", slug: "testing" },
-  { id: "3", name: "SQL", description: "Database management and queries", slug: "sql" },
-  { id: "4", name: "Networking", description: "Computer networking concepts", slug: "networking" },
-  { id: "5", name: "Web Development", description: "Web technologies and frameworks", slug: "web-development" },
-]
 
 export default function Home() {
   // const [fachbereiche, setFachbereiche] = useState<Fachbereich[]>(initialFachbereiche)
@@ -57,7 +42,7 @@ export default function Home() {
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [currentFachbereich, setCurrentFachbereich] = useState<Fachbereich | null>(null)
-  const [newFachbereich, setNewFachbereich] = useState<Omit<Fachbereich, "id">>({ name: "", description: "", slug: "" })
+  // const [newFachbereich, setNewFachbereich] = useState<Omit<Fachbereich, "id">>({ name: "", description: "", slug: "" })
 
   const refreshSubjects = async () => {
     try {
@@ -83,7 +68,7 @@ export default function Home() {
   //   setIsAddOpen(false)
   // }
 
-  const handleAddSubject = async (subjectData: any) => {
+  const handleAddSubject = async (subjectData: { name: string; description: string; slug: string}) => {
     try {
       const res = await fetch("/api/subject_area", {
         method: "POST",
@@ -105,7 +90,7 @@ export default function Home() {
     setIsAddOpen(false);
   }
 
-  const handleEditSubject = async (subjectData: any) => {
+  const handleEditSubject = async (subjectData: { name: string; description: string; slug: string}) => {
     try {
       const res = await fetch(`/api/subject_area/${currentFachbereich?.id}`, {
         method: "PATCH",
