@@ -21,6 +21,7 @@ export async function GET(
           *,
             question (
               *,
+              difficulty (*),
               topic_complex (
                 *,
                 parent_subject (*)

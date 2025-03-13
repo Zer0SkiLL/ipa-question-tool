@@ -29,6 +29,10 @@ interface Question {
   fachbereich: string
   themenkomplex: string
   comment: string
+  difficulty: {
+    name: string
+    color: string
+  }
 }
 
 interface GroupedQuestions {
@@ -142,6 +146,7 @@ export default function ApprenticeDetail({ id }: { id: string }) {
       fachbereich: q.question.topic_complex.parent_subject.name,
       themenkomplex: q.question.topic_complex.name,
       comment: q.comment,
+      difficulty: q.question.difficulty
     }))
   }
 
@@ -419,24 +424,28 @@ export default function ApprenticeDetail({ id }: { id: string }) {
                             <Card key={question.id}>
                               <CardHeader>
                                 <CardTitle className="text-lg">{question.question}</CardTitle>
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        className="ml-auto"
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => unassignQuestion(question.id)}
-                                      >
-                                        <Trash2 className="w-5 h-5 text-red-500" />
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Unassign question</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                                
+                                <div className="flex items-center gap-2">
+                                  <Badge className={`${question.difficulty.color} text-white`}>
+                                    {question.difficulty.name}
+                                  </Badge>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          className="ml-auto"
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => unassignQuestion(question.id)}
+                                        >
+                                          <Trash2 className="w-5 h-5 text-red-500" />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Unassign question</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </div>
                               </CardHeader>
                               <CardContent>
                                 <p className="mb-4">{question.answer}</p>
