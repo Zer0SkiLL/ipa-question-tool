@@ -55,6 +55,19 @@ export default function ApprenticesPage() {
   //   fetchApprentices();
   // }, []);
 
+  const mapApprenticesData = (data: ApprenticeDb[]): ApprenticeOverview[] => {
+    return data.map((apprentice) => ({
+      id: apprentice.id, // Assuming API doesn't return an ID, generate one
+      firstName: apprentice.first_name,
+      lastName: apprentice.last_name,
+      projectTitle: apprentice.project_title,
+      projectShortDescription: apprentice.project_short_description,
+      projectTopics: apprentice.topics || [], // Ensure it's always an array
+      isActive: apprentice.is_active,
+      expertRole: apprentice.expert_role || "Unknown", // Handle null values
+    }));
+  };
+
   useEffect(() => {
     const fetchApprentices = async () => {
       setLoading(true);
@@ -64,16 +77,7 @@ export default function ApprenticesPage() {
         console.log("Raw API Response:", data);
   
         // Map API response to match the expected state structure
-        const mappedData: ApprenticeOverview[] = data.map((apprentice: ApprenticeDb) => ({
-          id: apprentice.id, // Assuming API doesn't return an ID, generate one
-          firstName: apprentice.first_name,
-          lastName: apprentice.last_name,
-          projectTitle: apprentice.project_title,
-          projectShortDescription: apprentice.project_short_description,
-          projectTopics: apprentice.topics || [], // Ensure it's always an array
-          isActive: apprentice.is_active,
-          expertRole: apprentice.expert_role || "Unknown", // Handle null values
-        }));
+        const mappedData = mapApprenticesData(data);
   
         setApprentices(mappedData);
         console.log("Mapped Apprentices:", mappedData);
@@ -116,8 +120,10 @@ export default function ApprenticesPage() {
       const data = await response.json();
       console.log("API Response:", data);
 
+      const newApprenticeApiResult = mapApprenticesData([data])[0]
+
       // update state
-      setApprentices([...apprentices, { ...data, id }])
+      setApprentices((prevApprentices) => [...prevApprentices, newApprenticeApiResult]);
     } catch (error) {
       console.error("Error creating apprentice:", error);
     } finally {

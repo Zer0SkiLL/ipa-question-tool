@@ -9,21 +9,41 @@ export async function GET(
   try {
     const { id } = await params;
     const supabase = await createClient();
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
+
     const { data, error } = await supabase
-      .from('question')
+      .from('apprentice')
       .select(`
           *,
-          difficulty (*),
-          topic_complex (*)
+          apprentice_question (
+          *,
+            question (
+              *,
+              topic_complex (
+                *,
+                parent_subject (*)
+              )
+            )
+          )
         `)
       .eq('id', id)
       .single();
 
     if (error) throw error;
 
+    if (!data) {
+      return NextResponse.json({ error: 'Apprentice not found' }, { status: 404 });
+    }
+
+    if (user?.id !== data.belongs_to) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     return NextResponse.json(data);
   } catch (error) {
-    const errorResponse = handleError(error, 'Error fetching question by ID');
+    const errorResponse = handleError(error, 'Error fetching apprentice by ID');
     return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }
@@ -37,22 +57,25 @@ export async function PATCH(
 
     const supabase = await createClient();
     const body = await req.json();
-    const { question, answer, difficulty_id, topic_id, tags } = body;
+    const { firstName: first_name, lastName: last_name, workLocation: address_link, projectTitle: project_title, projectDescription: project_short_description, expertRole: expert_role, projectTopics: topics, isActive: is_active } = body;
+
 
     const { data, error } = await supabase
-      .from('question')
+      .from('apprentice')
       .update({
-        question,
-        answer,
-        difficulty: difficulty_id,
-        topic_id,
-        tags
+        first_name,
+        last_name,
+        address_link,
+        project_title,
+        project_short_description,
+        expert_role,
+        topics,
+        is_active,
       })
       .eq('id', id)
       .select(`
           *,
-          difficulty (*),
-          topic_complex (*)
+          apprentice_question (*)
         `)
       .single();
 
@@ -60,7 +83,7 @@ export async function PATCH(
 
     return NextResponse.json(data);
   } catch (error) {
-    const errorResponse = handleError(error, 'Error updating question');
+    const errorResponse = handleError(error, 'Error updating apprentice');
     return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }
@@ -73,7 +96,7 @@ export async function DELETE(
     const { id } = await params;
     const supabase = await createClient();
     const { data, error } = await supabase
-      .from('question')
+      .from('apprentice')
       .delete()
       .eq('id', id)
       .select()
@@ -83,7 +106,7 @@ export async function DELETE(
 
     return NextResponse.json(data);
   } catch (error) {
-    const errorResponse = handleError(error, 'Error deleting question');
+    const errorResponse = handleError(error, 'Error deleting apprentice');
     return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }

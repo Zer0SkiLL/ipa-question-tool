@@ -29,7 +29,6 @@ export interface ApprenticeDb {
 }
 
 export interface ApprenticeOverviewForm {
-  id: number;
   firstName: string;
   lastName: string;
   workLocation: string;

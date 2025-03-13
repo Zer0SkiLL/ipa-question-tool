@@ -142,9 +142,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { ApprenticeOverviewForm } from "@/app/model/Apprentice";
 import { useForm } from "react-hook-form";
+import { useEffect } from "react";
 
 const apprenticeSchema = z.object({
-  id: z.number(),
   firstName: z.string().min(2, "Firstname must be at least 2 characters"),
   lastName: z.string().min(2, "Lastname must be at least 2 characters"),
   workLocation: z.string().optional(),
@@ -152,7 +152,6 @@ const apprenticeSchema = z.object({
   projectDescription: z.string().optional(),
   expertRole: z.enum(["Hauptexperte", "Nebenexperte"], { message: "Invalid expert role" }),
   projectTopics: z.array(z.string()).optional(),
-  active: z.boolean(),
 });
 
 type ApprenticeFormValues = z.infer<typeof apprenticeSchema>;
@@ -170,6 +169,7 @@ export function ApprenticeForm({ apprentice, isOpen, onClose, onSubmit }: Appren
     handleSubmit,
     formState: { errors, isValid, isSubmitting },
     setValue,
+    trigger,
   } = useForm<ApprenticeFormValues>({
     resolver: zodResolver(apprenticeSchema),
     defaultValues: apprentice || {
@@ -180,13 +180,12 @@ export function ApprenticeForm({ apprentice, isOpen, onClose, onSubmit }: Appren
       projectDescription: "",
       expertRole: "Nebenexperte",
       projectTopics: [],
-      active: true,
     },
+    mode: "onChange",
   });
 
   const handleFormSubmit = (data: ApprenticeFormValues) => {
     const mappedData: ApprenticeOverviewForm = {
-      id: data.id,
       firstName: data.firstName,
       lastName: data.lastName,
       workLocation: data.workLocation || "",
@@ -198,6 +197,11 @@ export function ApprenticeForm({ apprentice, isOpen, onClose, onSubmit }: Appren
 
     onSubmit(mappedData);
   };
+
+  useEffect(() => {
+    console.log("Errors:", errors);
+    console.log("Is Valid:", isValid);
+  }, [errors, isValid]);
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -222,7 +226,7 @@ export function ApprenticeForm({ apprentice, isOpen, onClose, onSubmit }: Appren
             {errors.lastName && <p className="text-red-500">{errors.lastName.message}</p>}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="workLocation">Work Location</Label>
+            <Label htmlFor="workLocation">Work Location (Google Maps Link)</Label>
             <Input id="workLocation" {...register("workLocation")} />
           </div>
           <div className="space-y-2">

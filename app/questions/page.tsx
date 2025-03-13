@@ -191,8 +191,8 @@ export default function QuestionsPage() {
   return (
     <FeatureWrapper
                   featureKey="question"
-                  title="Manage Site"
-                  description="Here you'll be able to manage everything!"
+                  title="Question Site"
+                  description="Here you'll be able to manage questions!"
                 >
       <div className="container mx-auto px-4 py-8">
         <Breadcrumb items={[{ name: "Questions", href: "/questions" }]} />

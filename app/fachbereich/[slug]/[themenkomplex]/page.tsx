@@ -26,6 +26,7 @@ import {
 import AddQuestionForm from "@/components/AddQuestionOverlay"
 import EditQuestionForm from "@/components/EditQuestionForm"
 import { ApprenticeSelector } from "@/components/ApprenticeSelector"
+import { toast } from "sonner"
 // import { Themenkomplex } from "@/app/model/Themenkomplex"
 
 
@@ -45,9 +46,29 @@ export default function ThemenkomplexPage({ params }: { params: Promise<{ slug: 
   const [themenkomplexName, setThemenkomplexName] = useState<string>("")
   // const [currentSubject, setCurrentSubject] = useState<Fachbereich | null>(null)
   const [loading, setLoading] = useState(false);
+  const [assignedApprentices, setAssignedApprentices] = useState<number[]>([])
 
-  // const [subject, setSubject] = useState<Fachbereich | null>(null)
-  // const [topic, setTopic] = useState<Themenkomplex | null>(null)
+
+useEffect(() => {
+  if (!isApprenticeSelectorOpen) return
+
+  const fetchAssignedApprentices = async () => {
+    try {
+      const response = await fetch(`/api/assigned-apprentices/${currentQuestion?.id}`)
+      if (!response.ok) throw new Error("Failed to fetch assigned apprentices")
+      const data = await response.json()
+      console.log("assigned apprentice fetched", data)
+      if (data) {
+        const apprenticeIds = data.map((apprentice: any) => apprentice.apprentice_id) // Extract apprentice IDs
+        setAssignedApprentices(apprenticeIds) // Store assigned apprentice IDs
+      }
+    } catch (error) {
+      console.error("Error fetching assigned apprentices:", error)
+    }
+  }
+
+  fetchAssignedApprentices()
+}, [isApprenticeSelectorOpen, currentQuestion?.id])
 
   // init param
   useEffect(() => {
@@ -229,11 +250,34 @@ export default function ThemenkomplexPage({ params }: { params: Promise<{ slug: 
     setIsApprenticeSelectorOpen(true)
   }
 
-  const handleApprenticeSelect = (apprenticeId: number) => {
+  const handleApprenticeSelect = async (apprenticeId: number) => {
+    if (assignedApprentices.includes(apprenticeId)) return // Prevent duplicates
     console.log(`Adding question ${currentQuestion?.id} to apprentice ${apprenticeId}`)
+  
     setIsApprenticeSelectorOpen(false)
-    setCurrentQuestion(null)
+    
+    // Assign the question to the apprentice
+    try {
+      await fetch("/api/assigned-apprentices/" + currentQuestion?.id, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apprenticeId }),
+      })
+      
+      setAssignedApprentices((prev) => [...prev, apprenticeId]) // Update assigned list
+      toast("Question has been assigned to apprentice.")
+    } catch (error) {
+      console.error("Error assigning question:", error)
+    } finally {
+      setCurrentQuestion(null)
+    }
   }
+
+  // const handleApprenticeSelect = (apprenticeId: number) => {
+  //   console.log(`Adding question ${currentQuestion?.id} to apprentice ${apprenticeId}`)
+  //   setIsApprenticeSelectorOpen(false)
+  //   setCurrentQuestion(null)
+  // }
 
   const handleDeleteBadge = async (questionId: number, updatedTags: string[]) => {
     console.log("Updated tags to send:", updatedTags);
@@ -314,9 +358,9 @@ export default function ThemenkomplexPage({ params }: { params: Promise<{ slug: 
                       {question.difficulty.name}
                     </Badge>
                     <Button variant="outline" size="sm" onClick={() => handleAddToApprentice(question)}>
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Add to Apprentice
-                  </Button>
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Add to Apprentice
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -384,6 +428,7 @@ export default function ThemenkomplexPage({ params }: { params: Promise<{ slug: 
         isOpen={isApprenticeSelectorOpen}
         onClose={() => setIsApprenticeSelectorOpen(false)}
         onSelect={handleApprenticeSelect}
+        assignedApprentices={assignedApprentices}
       />
 
       {/* Add Question Sheet */}

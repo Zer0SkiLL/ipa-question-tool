@@ -37,22 +37,19 @@ export async function PATCH(
 
     const supabase = await createClient();
     const body = await req.json();
-    const { question, answer, difficulty_id, topic_id, tags } = body;
+    const { comment } = body;
+
+    console.log("Received body:", body);
+    console.log("Comment:", comment);
 
     const { data, error } = await supabase
-      .from('question')
+      .from('apprentice_question')
       .update({
-        question,
-        answer,
-        difficulty: difficulty_id,
-        topic_id,
-        tags
+        comment: comment
       })
-      .eq('id', id)
+      .eq('question_id', id)
       .select(`
-          *,
-          difficulty (*),
-          topic_complex (*)
+          *
         `)
       .single();
 
@@ -60,30 +57,7 @@ export async function PATCH(
 
     return NextResponse.json(data);
   } catch (error) {
-    const errorResponse = handleError(error, 'Error updating question');
-    return NextResponse.json({ error: errorResponse.message }, { status: 500 });
-  }
-}
-
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
-    const supabase = await createClient();
-    const { data, error } = await supabase
-      .from('question')
-      .delete()
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    return NextResponse.json(data);
-  } catch (error) {
-    const errorResponse = handleError(error, 'Error deleting question');
+    const errorResponse = handleError(error, 'Error updating comment in question');
     return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }
