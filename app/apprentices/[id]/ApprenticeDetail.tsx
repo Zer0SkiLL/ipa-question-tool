@@ -139,7 +139,9 @@ export default function ApprenticeDetail({ id }: { id: string }) {
   }, [id])
 
   const mapQuestions = (questions: any[]) => {
-    return questions.map((q) => ({
+    // we need to map the questions and also sort by difficulty.level asc
+    const sortedQuestions = [...questions].sort((a, b) => a.question.difficulty.level - b.question.difficulty.level)
+    return sortedQuestions.map((q) => ({
       id: q.question.id,
       question: q.question.question,
       answer: q.question.answer,
