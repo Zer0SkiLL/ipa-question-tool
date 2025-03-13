@@ -2,6 +2,8 @@
 import React from 'react';
 import jsPDF from 'jspdf';
 import { autoTable } from 'jspdf-autotable';
+import { FileDown } from 'lucide-react';
+import { Button } from './ui/button';
 // import { Question } from '@/app/model/Question';
 
 interface PDFGeneratorProps {
@@ -67,7 +69,8 @@ const PDFGenerator: React.FC<PDFGeneratorProps> = ({ fachbereich, themenkomplex,
           const cellPosY = data.cell.y;
 
           // Add a text input field in the comment column
-          const textField = new (pdf as any).AcroFormTextField();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const textField: any = new (pdf as unknown as { AcroFormTextField: new () => any }).AcroFormTextField();
           textField.Rect = [cellPosX + 2, cellPosY + 2, cellWidth - 4, cellHeight - 4];
           textField.multiline = true;
           textField.value = ''; // Initial value (empty)
@@ -81,9 +84,14 @@ const PDFGenerator: React.FC<PDFGeneratorProps> = ({ fachbereich, themenkomplex,
   };
 
   return (
-    <button onClick={generatePDF} className='bg-transparent border-none p-0'>
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={generatePDF}
+      >
+        <FileDown className="w-4 h-4 mr-2" />
       Generate PDF
-    </button>
+    </Button>
   );
 };
 

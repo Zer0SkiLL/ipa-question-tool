@@ -6,19 +6,14 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Breadcrumb } from "@/components/Breadcrumb"
-import { set } from "zod"
-import { Fachbereich } from "@/app/model/Fachbereich"
+// import { Fachbereich } from "@/app/model/Fachbereich"
 import { Question } from "../../../model/Question"
-import { Difficulty } from "@/app/model/Difficulty"
-import AddQuestionOverlay from "@/components/AddQuestionOverlay"
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetDescription,
-  SheetFooter,
-  SheetClose,
 } from "@/components/ui/sheet"
 import {
   Dialog,
@@ -31,9 +26,12 @@ import {
 import AddQuestionForm from "@/components/AddQuestionOverlay"
 import EditQuestionForm from "@/components/EditQuestionForm"
 import { ApprenticeSelector } from "@/components/ApprenticeSelector"
-import { Themenkomplex } from "@/app/model/Themenkomplex"
+import { toast } from "sonner"
+// import { Themenkomplex } from "@/app/model/Themenkomplex"
 
-export default function ThemenkomplexPage({ params }: { params: { slug: string; themenkomplex: string } }) {
+
+
+export default function ThemenkomplexPage({ params }: { params: Promise<{ slug: string; themenkomplex: string }> }) {
   const [expandedQuestions, setExpandedQuestions] = useState<number[]>([])
   const [isApprenticeSelectorOpen, setIsApprenticeSelectorOpen] = useState(false)
   const [questions, setQuestions] = useState<Question[]>([])
@@ -48,9 +46,29 @@ export default function ThemenkomplexPage({ params }: { params: { slug: string; 
   const [themenkomplexName, setThemenkomplexName] = useState<string>("")
   // const [currentSubject, setCurrentSubject] = useState<Fachbereich | null>(null)
   const [loading, setLoading] = useState(false);
+  const [assignedApprentices, setAssignedApprentices] = useState<number[]>([])
 
-  const [subject, setSubject] = useState<Fachbereich | null>(null)
-  const [topic, setTopic] = useState<Themenkomplex | null>(null)
+
+useEffect(() => {
+  if (!isApprenticeSelectorOpen) return
+
+  const fetchAssignedApprentices = async () => {
+    try {
+      const response = await fetch(`/api/assigned-apprentices/${currentQuestion?.id}`)
+      if (!response.ok) throw new Error("Failed to fetch assigned apprentices")
+      const data = await response.json()
+      console.log("assigned apprentice fetched", data)
+      if (data) {
+        const apprenticeIds = data.map((apprentice: any) => apprentice.apprentice_id) // Extract apprentice IDs
+        setAssignedApprentices(apprenticeIds) // Store assigned apprentice IDs
+      }
+    } catch (error) {
+      console.error("Error fetching assigned apprentices:", error)
+    }
+  }
+
+  fetchAssignedApprentices()
+}, [isApprenticeSelectorOpen, currentQuestion?.id])
 
   // init param
   useEffect(() => {
@@ -110,13 +128,15 @@ export default function ThemenkomplexPage({ params }: { params: { slug: string; 
   // once questions are fetched, fetch the subject and topic
   useEffect(() => {
 
+    console.log("fetch subject and topic", subjectSlug, topicSlug)
+
     if (!subjectSlug || !topicSlug) return;
 
     const getSubjectBySlug = async () => {
       try {
         const res = await fetch(`/api/subject_area/slug/${subjectSlug}`);
         const data = await res.json();
-        setSubject(data);
+        // setSubject(data);
         console.log("fetch subjects by slug", data);
       } catch (error) {
         console.error("Error fetching subject:", error);
@@ -127,7 +147,7 @@ export default function ThemenkomplexPage({ params }: { params: { slug: string; 
       try {
         const res = await fetch(`/api/topic_complex/slug/${topicSlug}`);
         const data = await res.json();
-        setTopic(data);
+        // setTopic(data);
         console.log("fetch topics by slug", data);
       } catch (error) {
         console.error("Error fetching topic:", error);
@@ -137,9 +157,9 @@ export default function ThemenkomplexPage({ params }: { params: { slug: string; 
     getSubjectBySlug();
     getTopicBySlug();
 
-  }, [questions])
+  }, [questions, subjectSlug, topicSlug])
 
-  const handleEditQuestion = async (data: any) => {
+  const handleEditQuestion = async (data: { id: number; question: string; answer: string; difficulty: number; tags: string[] }) => {
     try {
       setLoading(true)
       console.log("data in handleEditQuestion", data);
@@ -168,7 +188,7 @@ export default function ThemenkomplexPage({ params }: { params: { slug: string; 
     }
   }
 
-  const handleAddQuestion = async (data: any) => {
+  const handleAddQuestion = async (data: { question: string; answer: string; difficulty: number; tags: string[] }) => {
     try {
       setLoading(true)
       console.log("data here:", data)
@@ -179,7 +199,7 @@ export default function ThemenkomplexPage({ params }: { params: { slug: string; 
           ...data, 
           topic_id: topicId, 
           difficulty_id: data.difficulty, 
-          tags: data.tags.split(",").map((tag: string) => tag.trim())
+          tags: data.tags
         }),
       })
 
@@ -230,11 +250,34 @@ export default function ThemenkomplexPage({ params }: { params: { slug: string; 
     setIsApprenticeSelectorOpen(true)
   }
 
-  const handleApprenticeSelect = (apprenticeId: number) => {
+  const handleApprenticeSelect = async (apprenticeId: number) => {
+    if (assignedApprentices.includes(apprenticeId)) return // Prevent duplicates
     console.log(`Adding question ${currentQuestion?.id} to apprentice ${apprenticeId}`)
+  
     setIsApprenticeSelectorOpen(false)
-    setCurrentQuestion(null)
+    
+    // Assign the question to the apprentice
+    try {
+      await fetch("/api/assigned-apprentices/" + currentQuestion?.id, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apprenticeId }),
+      })
+      
+      setAssignedApprentices((prev) => [...prev, apprenticeId]) // Update assigned list
+      toast("Question has been assigned to apprentice.")
+    } catch (error) {
+      console.error("Error assigning question:", error)
+    } finally {
+      setCurrentQuestion(null)
+    }
   }
+
+  // const handleApprenticeSelect = (apprenticeId: number) => {
+  //   console.log(`Adding question ${currentQuestion?.id} to apprentice ${apprenticeId}`)
+  //   setIsApprenticeSelectorOpen(false)
+  //   setCurrentQuestion(null)
+  // }
 
   const handleDeleteBadge = async (questionId: number, updatedTags: string[]) => {
     console.log("Updated tags to send:", updatedTags);
@@ -315,9 +358,9 @@ export default function ThemenkomplexPage({ params }: { params: { slug: string; 
                       {question.difficulty.name}
                     </Badge>
                     <Button variant="outline" size="sm" onClick={() => handleAddToApprentice(question)}>
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Add to Apprentice
-                  </Button>
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Add to Apprentice
+                    </Button>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -385,6 +428,7 @@ export default function ThemenkomplexPage({ params }: { params: { slug: string; 
         isOpen={isApprenticeSelectorOpen}
         onClose={() => setIsApprenticeSelectorOpen(false)}
         onSelect={handleApprenticeSelect}
+        assignedApprentices={assignedApprentices}
       />
 
       {/* Add Question Sheet */}
@@ -428,7 +472,7 @@ export default function ThemenkomplexPage({ params }: { params: { slug: string; 
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Question "{currentQuestion?.question}"</DialogTitle>
+            <DialogTitle>Delete Question &quot;{currentQuestion?.question}&quot;</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete this question? This action cannot be undone.
             </DialogDescription>

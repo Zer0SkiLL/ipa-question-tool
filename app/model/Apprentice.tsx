@@ -13,14 +13,29 @@ export interface Apprentice {
   isActive: boolean;
 }
 
+export interface ApprenticeDb {
+  id: number,
+  belongs_to: string,
+  first_name: string,
+  last_name: string,
+  question: ApprenticeQuestion[],
+  external_url: string,
+  topics: string[],
+  is_active: boolean,
+  adress_link: string,
+  project_title: string,
+  project_short_description: string,
+  expert_role: "Hauptexperte" | "Nebenexperte",
+}
+
 export interface ApprenticeOverviewForm {
   firstName: string;
   lastName: string;
-  workLocation?: string;
-  projectTitle?: string;
-  projectDescription?: string;
+  workLocation: string;
+  projectTitle: string;
+  projectDescription: string;
   expertRole: "Hauptexperte" | "Nebenexperte";
-  projectTopics?: string[];
+  projectTopics: string[];
 }
 
 export interface ApprenticeOverview {

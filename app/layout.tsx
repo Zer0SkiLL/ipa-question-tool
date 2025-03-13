@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import Link from "next/link"
 import type React from "react"
 import { UserNav } from "@/components/UserNav"
+import { Toaster } from "@/components/ui/sonner"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -58,6 +59,7 @@ export default async function RootLayout({
           </div>
         </nav>
         <main>{children}</main>
+        <Toaster />
       </body>
     </html>
   )

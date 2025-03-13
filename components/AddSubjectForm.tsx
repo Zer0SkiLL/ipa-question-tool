@@ -25,7 +25,7 @@ export default function AddSubjectForm({ onAdd }: { onAdd: (data: FachbereichFor
     mode: "onChange", // Ensures validation updates live
   });
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting] = useState(false);
 
   const onSubmit = (data: FachbereichForm) => {
     onAdd(data);

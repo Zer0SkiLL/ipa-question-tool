@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { handleError } from '@/utils/errorHandler';
 
-export async function GET(req: NextRequest, context: { params: { slug: string } }) {
+export async function GET(
+  req: NextRequest, 
+  { params }: { params: Promise<{ slug: string }> }
+) {
   try {
-    const { slug } = await context.params;
+    const { slug } = await params;
 
     console.log('slug: ', slug);
 
     if (!slug) {
       return NextResponse.json({ error: 'Slug is required' }, { status: 400 });
     }
+    console.log("Extracted slug:", slug);
 
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -22,9 +27,7 @@ export async function GET(req: NextRequest, context: { params: { slug: string } 
 
     return NextResponse.json(data);
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Error fetching subject_area by slug' },
-      { status: 500 }
-    );
+    const errorResponse = handleError(error, 'Error fetching subject_area by slug');
+    return NextResponse.json({ error: errorResponse.message }, { status: 500 });
   }
 }

@@ -191,8 +191,8 @@ export default function QuestionsPage() {
   return (
     <FeatureWrapper
                   featureKey="question"
-                  title="Manage Site"
-                  description="Here you'll be able to manage everything!"
+                  title="Question Site"
+                  description="Here you'll be able to manage questions!"
                 >
       <div className="container mx-auto px-4 py-8">
         <Breadcrumb items={[{ name: "Questions", href: "/questions" }]} />
@@ -227,7 +227,11 @@ export default function QuestionsPage() {
         </div>
 
         <div className="space-y-4">
-          {filteredQuestions.map((question) => (
+          { loading ? (
+            <p>Loading...</p>
+          ) : questionsDb.length === 0 ? (
+            <p>No questions found.</p>
+          ) : filteredQuestions.map((question) => (
             <Card key={question.id} className="relative">
               <CardHeader>
                 <CardTitle className="text-lg pr-20">{question.question}</CardTitle>
