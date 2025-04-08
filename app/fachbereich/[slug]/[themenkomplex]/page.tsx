@@ -414,7 +414,7 @@ useEffect(() => {
                   )}
                 </Button>
                 {expandedQuestions.includes(question.id) && (
-                  <div className="mt-4 p-4 bg-muted rounded-md">{question.answer}</div>
+                  <div className="mt-4 p-4 bg-muted rounded-md whitespace-pre-wrap">{question.answer}</div>
                 )}
               </CardContent>
             </Card>
