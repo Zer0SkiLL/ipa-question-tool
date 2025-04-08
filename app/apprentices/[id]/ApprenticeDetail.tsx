@@ -450,7 +450,7 @@ export default function ApprenticeDetail({ id }: { id: string }) {
                                 </div>
                               </CardHeader>
                               <CardContent>
-                                <p className="mb-4">{question.answer}</p>
+                                <p className="mb-4 whitespace-pre-wrap">{question.answer}</p>
                                 <div className="relative">
                                   <Textarea
                                     placeholder="Add a comment about the apprentice's answer"
