@@ -36,6 +36,7 @@ export interface ApprenticeOverviewForm {
   projectDescription: string;
   expertRole: "Hauptexperte" | "Nebenexperte";
   projectTopics: string[];
+  isActive?: boolean;
 }
 
 export interface ApprenticeOverview {

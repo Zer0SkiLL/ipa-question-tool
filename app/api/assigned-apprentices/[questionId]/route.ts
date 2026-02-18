@@ -27,7 +27,6 @@ export async function GET(
     if (apprenticeError) throw apprenticeError;
 
     const apprenticeIds = apprentices.map(apprentice => apprentice.id);
-    console.log("apprentices", apprenticeIds)
     
     // const apprenticeIds = apprentices.map(apprentice => apprentice.id);
 
@@ -44,8 +43,6 @@ export async function GET(
       ); // Filter by apprentices belonging to the user
 
     if (error) throw error;
-
-    console.log("assigned apprentices", data)
 
     return NextResponse.json(data);
   } catch (error) {
@@ -73,8 +70,6 @@ export async function POST(
     // Parse the request body to get the apprentice ID
     const body = await req.json();
     const { apprenticeId } = body;
-
-    console.log("apprenticeId", apprenticeId)
 
     if (!apprenticeId) {
       return NextResponse.json({ error: 'Apprentice ID is required' }, { status: 400 });

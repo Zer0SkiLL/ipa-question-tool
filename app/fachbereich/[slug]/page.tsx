@@ -97,7 +97,7 @@ export default function FachbereichPage({ params }: { params: Promise<{ slug: st
         .split(" ")
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(" ")
-    : "Loading..."
+    : "Laden..."
 
 
 
@@ -213,16 +213,16 @@ export default function FachbereichPage({ params }: { params: Promise<{ slug: st
       {slug ? (
         <Breadcrumb items={[{ name: fachbereichName, href: `/fachbereich/${slug}` }]} />
       ) : (
-        <p>Loading...</p>
+        <p>Laden...</p>
       )}
 
       <div className="flex justify-between items-center my-8">
         <div className="flex flex-col">
-          <h1 className="text-4xl font-bold">Topics</h1>
+          <h1 className="text-4xl font-bold">Themenkomplexe</h1>
           <h2 className="text-2xl font-semibold">{fachbereichName}</h2>
         </div>
         <Button onClick={() => setIsAddOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add Themenkomplex
+          <PlusCircle className="mr-2 h-4 w-4" /> Themenkomplex hinzufügen
         </Button>
       </div>
 
@@ -269,15 +269,15 @@ export default function FachbereichPage({ params }: { params: Promise<{ slug: st
           </Card>
           ))
         ) : (
-          <p>No topics found.</p>
+          <p>Keine Themen gefunden.</p>
       )}
       </div>
 
       <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Add New Themenkomplex</SheetTitle>
-            <SheetDescription>Enter the details for the new Themenkomplex.</SheetDescription>
+            <SheetTitle>Neuen Themenkomplex hinzufügen</SheetTitle>
+            <SheetDescription>Geben Sie die Details für den neuen Themenkomplex ein.</SheetDescription>
           </SheetHeader>
           {currentSubject && (
           <AddTopicForm 
@@ -290,8 +290,8 @@ export default function FachbereichPage({ params }: { params: Promise<{ slug: st
       <Sheet open={isEditOpen} onOpenChange={setIsEditOpen}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Edit Themenkomplex</SheetTitle>
-            <SheetDescription>Modify the details of the Themenkomplex.</SheetDescription>
+            <SheetTitle>Themenkomplex bearbeiten</SheetTitle>
+            <SheetDescription>Bearbeiten Sie die Details des Themenkomplexes.</SheetDescription>
           </SheetHeader>
           {currentThemenkomplex && (
           <EditTopicForm 
@@ -305,17 +305,17 @@ export default function FachbereichPage({ params }: { params: Promise<{ slug: st
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Are you sure you want to delete the Themenkomplex {currentThemenkomplex?.name} ?</DialogTitle>
+            <DialogTitle>Möchten Sie wirklich den Themenkomplex löschen {currentThemenkomplex?.name} ?</DialogTitle>
             <DialogDescription>
-              This action cannot be undone. This will permanently delete the Themenkomplex and all associated data.
+              Diese Aktion kann nicht rückgängig gemacht werden. Der Themenkomplex und alle zugehörigen Daten werden dauerhaft gelöscht.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteOpen(false)} disabled={loading}>
-              Cancel
+              Abbrechen
             </Button>
             <Button variant="destructive" onClick={handleDeleteTopic} disabled={loading}>
-              {loading ? "Deleting..." : "Delete"}
+              {loading ? "Wird gelöscht..." : "Löschen"}
             </Button>
           </DialogFooter>
         </DialogContent>

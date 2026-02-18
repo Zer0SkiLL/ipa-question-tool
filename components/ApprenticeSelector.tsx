@@ -1,16 +1,9 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-
-interface Apprentice {
-  id: number
-  firstName: string
-  lastName: string
-  projectTitle: string
-}
+import { useActiveApprentices } from "@/hooks/use-active-apprentices"
 
 interface ApprenticeSelectorProps {
   isOpen: boolean
@@ -20,51 +13,29 @@ interface ApprenticeSelectorProps {
 }
 
 export function ApprenticeSelector({ isOpen, onClose, onSelect, assignedApprentices }: ApprenticeSelectorProps) {
-  const [apprentices, setApprentices] = useState<Apprentice[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { apprentices: rawApprentices, isLoading: loading, error } = useActiveApprentices(isOpen)
 
-  useEffect(() => {
-    if (!isOpen) return // Only fetch when the modal is open
-    console.log("assigned apprentice", assignedApprentices)
-    const fetchApprentices = async () => {
-      try {
-        setLoading(true)
-        const response = await fetch("/api/apprentice/active")
-        if (!response.ok) throw new Error("Failed to fetch apprentices")
-        const data = await response.json()
-        console.log(data)
-        const apprentices = data.map((apprentice: any) => ({
-          id: apprentice.id,
-          firstName: apprentice.first_name,
-          lastName: apprentice.last_name,
-          projectTitle: apprentice.project_title
-        }))
-        setApprentices(apprentices)
-      } catch (err) {
-        setError((err as Error).message)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchApprentices()
-  }, [isOpen])
+  const apprentices = (rawApprentices ?? []).map((a: any) => ({
+    id: a.id,
+    firstName: a.first_name,
+    lastName: a.last_name,
+    projectTitle: a.project_title,
+  }))
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Select Apprentice</DialogTitle>
-          <DialogDescription>Choose an apprentice to assign this question to.</DialogDescription>
+          <DialogTitle>Lernende/n auswählen</DialogTitle>
+          <DialogDescription>Wählen Sie eine/n Lernende/n aus, um diese Frage zuzuweisen.</DialogDescription>
         </DialogHeader>
 
-        {loading && <p className="text-center text-sm text-muted-foreground">Loading apprentices...</p>}
-        {error && <p className="text-center text-sm text-red-500">{error}</p>}
+        {loading && <p className="text-center text-sm text-muted-foreground">Lernende werden geladen...</p>}
+        {error && <p className="text-center text-sm text-red-500">{error.message}</p>}
 
         {!loading && !error && (
           <ScrollArea className="mt-8 max-h-[300px] pr-4">
-          {apprentices.map((apprentice) => {
+          {apprentices.map((apprentice: any) => {
             const isAssigned = assignedApprentices.includes(apprentice.id)
 
             return (
@@ -78,7 +49,7 @@ export function ApprenticeSelector({ isOpen, onClose, onSelect, assignedApprenti
                 <div className="text-left">
                   <div>{apprentice.firstName} {apprentice.lastName}</div>
                   <div className="text-sm text-muted-foreground">{apprentice.projectTitle}</div>
-                  {isAssigned && <div className="text-xs text-green-600">Already assigned</div>}
+                  {isAssigned && <div className="text-xs text-green-600">Bereits zugewiesen</div>}
                 </div>
               </Button>
             )
@@ -89,4 +60,3 @@ export function ApprenticeSelector({ isOpen, onClose, onSelect, assignedApprenti
     </Dialog>
   )
 }
-

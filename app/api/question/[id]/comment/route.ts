@@ -37,20 +37,19 @@ export async function PATCH(
 
     const supabase = await createClient();
     const body = await req.json();
-    const { comment } = body;
+    const { comment, apprenticeId, score, isAsked } = body;
 
-    console.log("Received body:", body);
-    console.log("Comment:", comment);
+    const updateData: Record<string, any> = {};
+    if (comment !== undefined) updateData.comment = comment;
+    if (score !== undefined) updateData.score = score;
+    if (isAsked !== undefined) updateData.is_asked = isAsked;
 
     const { data, error } = await supabase
       .from('apprentice_question')
-      .update({
-        comment: comment
-      })
+      .update(updateData)
       .eq('question_id', id)
-      .select(`
-          *
-        `)
+      .eq('apprentice_id', apprenticeId)
+      .select('*')
       .single();
 
     if (error) throw error;

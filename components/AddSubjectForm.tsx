@@ -8,9 +8,9 @@ import { Button } from "./ui/button";
 import { useState } from "react";
 
 export const fachbereichSchema = z.object({
-    name: z.string().min(2, "Name must be at least 2 characters"),
-    description: z.string().min(3, "Description must be at least 3 characters"),
-    slug: z.string().regex(/^[a-z0-9-]+$/, "Slug must be lowercase with hyphens"),
+    name: z.string().min(2, "Name muss mindestens 2 Zeichen lang sein"),
+    description: z.string().min(3, "Beschreibung muss mindestens 3 Zeichen lang sein"),
+    slug: z.string().regex(/^[a-z0-9-]+$/, "Slug muss aus Kleinbuchstaben und Bindestrichen bestehen"),
   });
 
 type FachbereichForm = z.infer<typeof fachbereichSchema>;
@@ -41,7 +41,7 @@ export default function AddSubjectForm({ onAdd }: { onAdd: (data: FachbereichFor
         </div>
 
         <div>
-          <Label htmlFor="description">Description</Label>
+          <Label htmlFor="description">Beschreibung</Label>
           <Input id="description" {...register("description")} />
           {errors.description && <p className="text-red-500">{errors.description.message}</p>}
         </div>
@@ -56,7 +56,7 @@ export default function AddSubjectForm({ onAdd }: { onAdd: (data: FachbereichFor
       <SheetFooter>
         <SheetClose asChild>
           <Button type="submit" disabled={!isValid || isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save"}
+              {isSubmitting ? "Speichern..." : "Speichern"}
           </Button>
         </SheetClose>
       </SheetFooter>

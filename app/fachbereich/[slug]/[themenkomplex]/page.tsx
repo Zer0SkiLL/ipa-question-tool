@@ -6,7 +6,6 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Breadcrumb } from "@/components/Breadcrumb"
-// import { Fachbereich } from "@/app/model/Fachbereich"
 import { Question } from "../../../model/Question"
 import {
   Sheet,
@@ -27,11 +26,12 @@ import AddQuestionForm from "@/components/AddQuestionOverlay"
 import EditQuestionForm from "@/components/EditQuestionForm"
 import { ApprenticeSelector } from "@/components/ApprenticeSelector"
 import { toast } from "sonner"
-// import { Themenkomplex } from "@/app/model/Themenkomplex"
+import { useDemoMode } from "@/components/DemoModeProvider"
 
 
 
 export default function ThemenkomplexPage({ params }: { params: Promise<{ slug: string; themenkomplex: string }> }) {
+  const isDemoMode = useDemoMode()
   const [expandedQuestions, setExpandedQuestions] = useState<number[]>([])
   const [isApprenticeSelectorOpen, setIsApprenticeSelectorOpen] = useState(false)
   const [questions, setQuestions] = useState<Question[]>([])
@@ -44,7 +44,6 @@ export default function ThemenkomplexPage({ params }: { params: Promise<{ slug: 
   const [topicId, setTopicId] = useState<string | null>(null)
   const [fachbereichName, setFachbereichName] = useState<string>("")
   const [themenkomplexName, setThemenkomplexName] = useState<string>("")
-  // const [currentSubject, setCurrentSubject] = useState<Fachbereich | null>(null)
   const [loading, setLoading] = useState(false);
   const [assignedApprentices, setAssignedApprentices] = useState<number[]>([])
 
@@ -57,7 +56,6 @@ useEffect(() => {
       const response = await fetch(`/api/assigned-apprentices/${currentQuestion?.id}`)
       if (!response.ok) throw new Error("Failed to fetch assigned apprentices")
       const data = await response.json()
-      console.log("assigned apprentice fetched", data)
       if (data) {
         const apprenticeIds = data.map((apprentice: any) => apprentice.apprentice_id) // Extract apprentice IDs
         setAssignedApprentices(apprenticeIds) // Store assigned apprentice IDs
@@ -73,10 +71,7 @@ useEffect(() => {
   // init param
   useEffect(() => {
     async function fetchParams() {
-      console.log("fetchParams")
       const { slug, themenkomplex } = await params;
-      console.log("slug", slug)
-      console.log("topicSlugParam", themenkomplex)
       if (slug) {
         setSubjectSlug(slug);
         setFachbereichName(
@@ -103,7 +98,6 @@ useEffect(() => {
 
   // get questions by topic
   useEffect(() => {
-    console.log("fetch questions by topic", topicSlug)
     if (!topicSlug) return;
 
     setLoading(true);
@@ -112,7 +106,6 @@ useEffect(() => {
       try {
         const res = await fetch(`/api/question/topic/${topicSlug}`);
         const data = await res.json();
-        console.log("fetch questions by topic", data);
         setQuestions(data.questions);
         setTopicId(data.topicId);
       } catch (error) {
@@ -128,16 +121,12 @@ useEffect(() => {
   // once questions are fetched, fetch the subject and topic
   useEffect(() => {
 
-    console.log("fetch subject and topic", subjectSlug, topicSlug)
-
     if (!subjectSlug || !topicSlug) return;
 
     const getSubjectBySlug = async () => {
       try {
         const res = await fetch(`/api/subject_area/slug/${subjectSlug}`);
         const data = await res.json();
-        // setSubject(data);
-        console.log("fetch subjects by slug", data);
       } catch (error) {
         console.error("Error fetching subject:", error);
       }
@@ -147,8 +136,6 @@ useEffect(() => {
       try {
         const res = await fetch(`/api/topic_complex/slug/${topicSlug}`);
         const data = await res.json();
-        // setTopic(data);
-        console.log("fetch topics by slug", data);
       } catch (error) {
         console.error("Error fetching topic:", error);
       }
@@ -162,10 +149,6 @@ useEffect(() => {
   const handleEditQuestion = async (data: { id: number; question: string; answer: string; difficulty: number; tags: string[] }) => {
     try {
       setLoading(true)
-      console.log("data in handleEditQuestion", data);
-      // Ensure data.tags is a string before calling split
-      console.log("tags", data.tags)
-
       const response = await fetch(`/api/question/${data.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -173,10 +156,7 @@ useEffect(() => {
       })
       if (!response.ok) throw new Error("Failed to update question")
 
-      console.log("result", response)
-
       const updatedQuestion = await response.json()
-      console.log("updated question", updatedQuestion)
       
       // Update the questions list with the edited question
       setQuestions(prev => prev.map(q => q.id === data.id ? {...q, answer: updatedQuestion.answer, question: updatedQuestion.question, difficulty: updatedQuestion.difficulty, tags: updatedQuestion.tags} : q))
@@ -191,7 +171,6 @@ useEffect(() => {
   const handleAddQuestion = async (data: { question: string; answer: string; difficulty: number; tags: string[] }) => {
     try {
       setLoading(true)
-      console.log("data here:", data)
       const response = await fetch(`/api/question/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -226,8 +205,6 @@ useEffect(() => {
         method: "DELETE",
       })
       if (!response.ok) throw new Error("Failed to delete question")
-
-      console.log("result", response)
       
       // Remove the deleted question from the list
       setQuestions(prev => prev.filter(q => q.id !== currentQuestion.id))
@@ -252,7 +229,6 @@ useEffect(() => {
 
   const handleApprenticeSelect = async (apprenticeId: number) => {
     if (assignedApprentices.includes(apprenticeId)) return // Prevent duplicates
-    console.log(`Adding question ${currentQuestion?.id} to apprentice ${apprenticeId}`)
   
     setIsApprenticeSelectorOpen(false)
     
@@ -265,7 +241,7 @@ useEffect(() => {
       })
       
       setAssignedApprentices((prev) => [...prev, apprenticeId]) // Update assigned list
-      toast("Question has been assigned to apprentice.")
+      toast("Frage wurde dem Lernenden zugewiesen.")
     } catch (error) {
       console.error("Error assigning question:", error)
     } finally {
@@ -273,20 +249,7 @@ useEffect(() => {
     }
   }
 
-  // const handleApprenticeSelect = (apprenticeId: number) => {
-  //   console.log(`Adding question ${currentQuestion?.id} to apprentice ${apprenticeId}`)
-  //   setIsApprenticeSelectorOpen(false)
-  //   setCurrentQuestion(null)
-  // }
-
   const handleDeleteBadge = async (questionId: number, updatedTags: string[]) => {
-    console.log("Updated tags to send:", updatedTags);
-    console.log("currentQuestion", currentQuestion)
-    console.log("questionId", questionId)
-    // console.log("tag", tag)
-    // const updatedTags = currentQuestion?.tags.filter((b) => b !== tag) || [];
-    // console.log("Updated tags to send:", updatedTags); // Debugging log
-
     const response = await fetch(`/api/question/${questionId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -297,15 +260,6 @@ useEffect(() => {
       throw new Error("Failed to update question");
     }
 
-    // console.log("result", response)
-
-    // const updatedQuestion = await response.json()
-    console.log("updated questions tag")
-    // setCurrentQuestion((prev) => prev ? { ...prev, tags: updatedTags } : null);
-
-    console.log("updated question", currentQuestion)
-
-    // ✅ Also update the list of questions
     setQuestions(
       questions.map((q) =>
         q.id === questionId ? { ...q, tags: updatedTags } : q
@@ -324,12 +278,14 @@ useEffect(() => {
 
       <div className="flex justify-between items-center my-8">
         <div className="flex flex-col">
-          <h1 className="text-4xl font-bold">Questions</h1>
+          <h1 className="text-4xl font-bold">Fragen</h1>
           <h2 className="text-2xl font-semibold">{fachbereichName} - {themenkomplexName}</h2>
         </div>
+        {!isDemoMode && (
         <Button onClick={() => setIsAddOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add Question
+          <PlusCircle className="mr-2 h-4 w-4" /> Frage hinzufügen
         </Button>
+        )}
       </div>
 
       <div className="space-y-4">
@@ -344,12 +300,6 @@ useEffect(() => {
         ) : questions.length > 0 ? (
           questions.map((question) => (
             <Card key={question.id}>
-              {/* <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle className="text-lg">{question.question}</CardTitle>
-                  <Badge className={`${question.difficulty.color} text-white`}>{question.difficulty.name}</Badge>
-                </div>
-              </CardHeader> */}
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-lg">{question.question}</CardTitle>
@@ -359,8 +309,10 @@ useEffect(() => {
                     </Badge>
                     <Button variant="outline" size="sm" onClick={() => handleAddToApprentice(question)}>
                       <UserPlus className="w-4 h-4 mr-2" />
-                      Add to Apprentice
+                      Lernende/m zuweisen
                     </Button>
+                    {!isDemoMode && (
+                    <>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -383,12 +335,15 @@ useEffect(() => {
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
+                    </>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2">
                 {question.tags ? question.tags.map((tag) => (
                   <Badge key={tag} variant="secondary" className="flex items-center gap-1">
                     {tag}
+                      {!isDemoMode && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -400,13 +355,14 @@ useEffect(() => {
                       >
                         <X className="h-3 w-3" />
                       </Button>
+                      )}
                   </Badge>
                 ) ) : null}
               </div>
               </CardHeader>
               <CardContent>
                 <Button variant="ghost" className="w-full justify-between" onClick={() => toggleQuestion(question.id)}>
-                  {expandedQuestions.includes(question.id) ? "Hide Answer" : "Show Answer"}
+                  {expandedQuestions.includes(question.id) ? "Antwort verbergen" : "Antwort anzeigen"}
                   {expandedQuestions.includes(question.id) ? (
                     <ChevronUp className="h-4 w-4" />
                   ) : (
@@ -420,7 +376,7 @@ useEffect(() => {
             </Card>
           ))
         ) : (
-          <div className="text-center text-lg">No questions found</div>
+          <div className="text-center text-lg">Keine Fragen gefunden</div>
         )}
       </div>
 
@@ -432,24 +388,27 @@ useEffect(() => {
       />
 
       {/* Add Question Sheet */}
+      {!isDemoMode && (
       <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Add New Question</SheetTitle>
-            <SheetDescription>Enter the details for the new question.</SheetDescription>
+            <SheetTitle>Neue Frage hinzufügen</SheetTitle>
+            <SheetDescription>Geben Sie die Details für die neue Frage ein.</SheetDescription>
           </SheetHeader>
           <AddQuestionForm
             onAdd={handleAddQuestion}
           />
         </SheetContent>
       </Sheet>
+      )}
 
       {/* Edit Question Sheet */}
+      {!isDemoMode && (
       <Sheet open={isEditOpen} onOpenChange={setIsEditOpen}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Edit Question</SheetTitle>
-            <SheetDescription>Modify the details of the question.</SheetDescription>
+            <SheetTitle>Frage bearbeiten</SheetTitle>
+            <SheetDescription>Bearbeiten Sie die Details der Frage.</SheetDescription>
           </SheetHeader>
           {currentQuestion && (
             <EditQuestionForm
@@ -467,48 +426,31 @@ useEffect(() => {
           )}
         </SheetContent>
       </Sheet>
+      )}
 
       {/* Delete Question Dialog */}
+      {!isDemoMode && (
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Question &quot;{currentQuestion?.question}&quot;</DialogTitle>
+            <DialogTitle>Frage löschen &quot;{currentQuestion?.question}&quot;</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this question? This action cannot be undone.
+              Möchten Sie diese Frage wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDeleteOpen(false)} disabled={loading}>
-              Cancel
+              Abbrechen
             </Button>
             <Button variant="destructive" onClick={handleDeleteQuestion} disabled={loading}>
-              {loading ? "Deleting..." : "Delete"}
+              {loading ? "Wird gelöscht..." : "Löschen"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      )}
     </div>
 
   )
-
-  // function handleAddQuestion(): (data: { question: string; answer: string; difficulty: number }) => void {
-  //   return async (data) => {
-  //     try {
-  //       console.log("data here:", data)
-  //       const response = await fetch(`/api/question/`, {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({ ...data, topic_id: topicId, difficulty_id: data.difficulty }),
-  //       })
-  //       if (!response.ok) throw new Error("Failed to add question")
-  //       const newQuestion = await response.json()
-  //       // Refresh your questions list
-  //       setQuestions(prev => [...prev, newQuestion])
-  //       setIsAddOpen(false)
-  //     } catch (error) {
-  //       console.error("Error adding question:", error)
-  //     }
-  //   }
-  // }
 }
 

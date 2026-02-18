@@ -12,12 +12,12 @@ export function ComingSoon({ title, description }: ComingSoonProps) {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-3xl font-bold">{title}</CardTitle>
-          <CardDescription>{description || "This feature is coming soon!"}</CardDescription>
+          <CardDescription>{description || "Diese Funktion ist demnächst verfügbar!"}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center">
           <CalendarClock className="w-24 h-24 text-primary mb-4" />
           <p className="text-center text-muted-foreground">
-            We&apos;re working hard to bring you this feature. Please check back later!
+            Wir arbeiten daran, Ihnen diese Funktion bereitzustellen. Bitte schauen Sie später nochmal vorbei!
           </p>
         </CardContent>
       </Card>

@@ -57,13 +57,13 @@ export function UserNav({ isAuthenticated }: { isAuthenticated: boolean }) {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div>Laden...</div>;
   }
 
   if (!isAuthenticated) {
     return (
       <Button variant="secondary" onClick={handleSignIn}>
-        Sign In
+        Anmelden
       </Button>
     );
   }
@@ -97,7 +97,7 @@ export function UserNav({ isAuthenticated }: { isAuthenticated: boolean }) {
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
+        <DropdownMenuItem onClick={handleSignOut}>Abmelden</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

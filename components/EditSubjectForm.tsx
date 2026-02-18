@@ -9,9 +9,9 @@ import { useState } from "react";
 import { Fachbereich } from "@/app/model/Fachbereich";
 
 export const fachbereichSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  description: z.string().min(2, "Description must be at least 3 characters"),
-  slug: z.string().regex(/^[a-z0-9-]+$/, "Slug must be lowercase with hyphens"),
+  name: z.string().min(2, "Name muss mindestens 2 Zeichen lang sein"),
+  description: z.string().min(2, "Beschreibung muss mindestens 3 Zeichen lang sein"),
+  slug: z.string().regex(/^[a-z0-9-]+$/, "Slug muss aus Kleinbuchstaben und Bindestrichen bestehen"),
 });
 
 type FachbereichForm = z.infer<typeof fachbereichSchema>;
@@ -57,7 +57,7 @@ export default function EditSubjectForm({ subject, onEdit }: EditSubjectFormProp
         </div>
 
         <div>
-          <Label htmlFor="description">Description</Label>
+          <Label htmlFor="description">Beschreibung</Label>
           <Input id="description" {...register("description")} />
           {errors.description && (
             <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>
@@ -74,7 +74,7 @@ export default function EditSubjectForm({ subject, onEdit }: EditSubjectFormProp
       <SheetFooter>
         <SheetClose asChild>
           <Button type="submit" disabled={!isValid || isSubmitting}>
-            {isSubmitting ? "Saving..." : "Save Changes"}
+            {isSubmitting ? "Speichern..." : "Änderungen speichern"}
           </Button>
         </SheetClose>
       </SheetFooter>

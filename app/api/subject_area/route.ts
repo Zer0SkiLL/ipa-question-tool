@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { handleError } from '@/utils/errorHandler';
+import { checkDemoRestriction } from '@/utils/demo-guard';
 
 
 export async function GET() {
@@ -9,14 +10,10 @@ export async function GET() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
-      console.log('user', user);
-      console.log('user?.id', user?.id);
       const { data: subject_area, error } = await supabase
         .from('subject_area')
         .select('*')
 
-      console.log(subject_area);
-      
       if (error) throw error
       
       return NextResponse.json(subject_area)
@@ -29,13 +26,11 @@ export async function GET() {
   export async function POST(req: NextRequest) {
     const supabase = await createClient();
     try {
+      const demoBlock = await checkDemoRestriction();
+      if (demoBlock) return demoBlock;
+
       const body = await req.json()
       const { name, description, slug } = body
-
-      console.log('name', name);
-      console.log('description', description);  
-      console.log('slug', slug);
-      console.log(body);
 
       const {
         data: { user },
