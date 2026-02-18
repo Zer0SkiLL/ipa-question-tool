@@ -5,19 +5,19 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { SheetClose, SheetFooter } from "./ui/sheet";
 import { Button } from "./ui/button";
-import { useState, useEffect } from "react";
-import { Difficulty } from "@/app/model/Difficulty";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "./ui/badge";
 import { X } from "lucide-react";
 import { Input } from "./ui/input";
+import { useDifficulties } from "@/hooks/use-difficulties";
 
 // Define the schema for the question form
 const questionSchema = z.object({
   id: z.number(),
-  question: z.string().min(1, "Question is required"),
-  answer: z.string().min(1, "Answer is required"),
-  difficulty: z.number().min(1, "Difficulty selection is required").default(1),
+  question: z.string().min(1, "Frage ist erforderlich"),
+  answer: z.string().min(1, "Antwort ist erforderlich"),
+  difficulty: z.number().min(1, "Schwierigkeitsauswahl ist erforderlich").default(1),
   tags: z.array(z.string()).default([]),
 })
 
@@ -32,8 +32,7 @@ export default function EditQuestionForm({
   question,
   onEdit
 }: EditQuestionFormProps) {
-  const [difficulties, setDifficulties] = useState<Difficulty[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { difficulties, isLoading: loading } = useDifficulties();
   const [newTag, setNewTag] = useState("")
 
   const {
@@ -57,23 +56,6 @@ export default function EditQuestionForm({
   const tags = watch("tags")
   const [isSubmitting, setIsSubmitting] = useState(false);
   const selectedDifficultyId = watch("difficulty");
-
-  useEffect(() => {
-    const fetchDifficulties = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch("/api/difficulty");
-        const data = await res.json();
-        setDifficulties(data);
-      } catch (error) {
-        console.error("Error fetching difficulties:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDifficulties();
-  }, []);
 
   const onSubmit = async (data: QuestionFormData) => {
     setIsSubmitting(true);
@@ -106,7 +88,7 @@ export default function EditQuestionForm({
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="grid gap-4 py-4">
         <div>
-          <Label htmlFor="question">Question</Label>
+          <Label htmlFor="question">Frage</Label>
           <Textarea
             id="question"
             className="mt-1"
@@ -118,7 +100,7 @@ export default function EditQuestionForm({
         </div>
 
         <div>
-          <Label htmlFor="answer">Answer</Label>
+          <Label htmlFor="answer">Antwort</Label>
           <Textarea
             id="answer"
             className="mt-1"
@@ -130,7 +112,7 @@ export default function EditQuestionForm({
         </div>
 
         <div>
-          <Label>Difficulty</Label>
+          <Label>Schwierigkeit</Label>
           <div className="flex flex-wrap gap-2 mt-1">
             {difficulties.map((difficulty) => (
               <button
@@ -158,11 +140,11 @@ export default function EditQuestionForm({
         </div>
 
         <div>
-          <Label>Tags</Label>
+          <Label>Schlagwörter</Label>
           <div className="flex flex-wrap gap-2 mt-2">
             {/* if tags is undefined or empty display a text, otherwise map over the tags */}
             {!tags || tags.length === 0 ? (
-              <p className="text-gray-500">No Tags added</p>
+              <p className="text-gray-500">Keine Schlagwörter hinzugefügt</p>
             ) : (
               tags.map((tag) => (
                 <Badge key={tag} variant="secondary" className="flex items-center gap-1">
@@ -179,11 +161,11 @@ export default function EditQuestionForm({
               type="text"
               value={newTag}
               onChange={(e) => setNewTag(e.target.value)}
-              placeholder="New tag"
+              placeholder="Neues Schlagwort"
               className="mr-2"
             />
             <Button type="button" onClick={addTag}>
-              Add Tag
+              Schlagwort hinzufügen
             </Button>
           </div>
         </div>
@@ -195,7 +177,7 @@ export default function EditQuestionForm({
             type="submit"
             disabled={!isValid || isSubmitting || loading}
           >
-            {isSubmitting ? "Saving..." : "Save Changes"}
+            {isSubmitting ? "Speichern..." : "Änderungen speichern"}
           </Button>
         </SheetClose>
       </SheetFooter>

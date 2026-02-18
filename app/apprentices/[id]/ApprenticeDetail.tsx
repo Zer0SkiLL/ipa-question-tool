@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from "react"
-import Link from "next/link"
 import { Breadcrumb } from "@/components/Breadcrumb"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,13 +12,14 @@ import { Progress } from "@/components/ui/progress"
 import { FileDown, Save, MapPin, Edit, ExternalLink, Trash2 } from "lucide-react"
 import "jspdf-autotable"
 import PDFGenerator from "@/components/PDFGenerator"
+import ApprenticePDFGenerator from "@/components/ApprenticePDFGenerator"
 import { FeatureWrapper } from "@/components/FeatureWrapper"
 import { ApprenticeForm } from "@/components/ApprenticeForm"
-import { set } from "zod"
 import { Themenkomplex } from "@/app/model/Themenkomplex"
 import { TooltipProvider } from "@radix-ui/react-tooltip"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { debounce } from "lodash";
+import { useDemoMode } from "@/components/DemoModeProvider"
 
 
 interface Question {
@@ -29,6 +29,8 @@ interface Question {
   fachbereich: string
   themenkomplex: string
   comment: string
+  score: number | null
+  isAsked: boolean
   difficulty: {
     name: string
     color: string
@@ -41,52 +43,8 @@ interface GroupedQuestions {
   }
 }
 
-// const initialQuestions: Question[] = [
-//   {
-//     id: 1,
-//     question: "What is a variable in C#?",
-//     answer: "A variable in C# is a container for storing data values.",
-//     fachbereich: "C#",
-//     themenkomplex: "General",
-//     comment: "",
-//   },
-//   {
-//     id: 2,
-//     question: "Explain inheritance in C#",
-//     answer:
-//       "Inheritance is a mechanism where you can to derive a class from another class for a hierarchy of classes that share a set of attributes and methods.",
-//     fachbereich: "C#",
-//     themenkomplex: "General",
-//     comment: "",
-//   },
-//   {
-//     id: 3,
-//     question: "What is unit testing?",
-//     answer:
-//       "Unit testing is a software testing method by which individual units of source code are tested to determine whether they are fit for use.",
-//     fachbereich: "C#",
-//     themenkomplex: "Testing",
-//     comment: "",
-//   },
-//   {
-//     id: 4,
-//     question: "What is a primary key in SQL?",
-//     answer: "A primary key is a column or set of columns in a table that uniquely identifies each row in that table.",
-//     fachbereich: "SQL",
-//     themenkomplex: "Basic Queries",
-//     comment: "",
-//   },
-//   {
-//     id: 5,
-//     question: "Explain SQL JOIN",
-//     answer: "SQL JOIN is used to combine rows from two or more tables, based on a related column between them.",
-//     fachbereich: "SQL",
-//     themenkomplex: "Basic Queries",
-//     comment: "",
-//   },
-// ]
-
 export default function ApprenticeDetail({ id }: { id: string }) {
+  const isDemoMode = useDemoMode()
   const [apprentice, setApprentice] = useState({
     id: Number.parseInt(id),
     first_name: "John",
@@ -99,8 +57,9 @@ export default function ApprenticeDetail({ id }: { id: string }) {
   })
 
   const [textInputs, setTextInputs] = useState<{ [key: number]: string }>({});
+  const [scoreInputs, setScoreInputs] = useState<{ [key: number]: number | null }>({});
+  const [isAskedInputs, setIsAskedInputs] = useState<{ [key: number]: boolean }>({});
   const [isEditFormOpen, setIsEditFormOpen] = useState(false)
-  // const [assignedQuestions, setAssignedQuestions] = useState<Question[]>(initialQuestions)
   const [newTopic, setNewTopic] = useState("")
   const [saveStatus, setSaveStatus] = useState<Record<number, "saved" | "saving" | "error">>({})
   const [isLoading, setIsLoading] = useState(true)
@@ -115,7 +74,6 @@ export default function ApprenticeDetail({ id }: { id: string }) {
       try {
         const response = await fetch(`/api/apprentice/${id}`)
         const data = await response.json()
-        console.log("Apprenticedetail: ", data)
         setApprentice(data)
         setQuestions(data.apprentice_question)
         const mappedQuestions = mapQuestions(data.apprentice_question)
@@ -126,6 +84,18 @@ export default function ApprenticeDetail({ id }: { id: string }) {
         }, {} as { [key: number]: string });
       
         setTextInputs(initialInputs);
+
+        const initialScores = mappedQuestions.reduce((acc, q) => {
+          acc[q.id] = q.score;
+          return acc;
+        }, {} as { [key: number]: number | null });
+        setScoreInputs(initialScores);
+
+        const initialIsAsked = mappedQuestions.reduce((acc, q) => {
+          acc[q.id] = q.isAsked;
+          return acc;
+        }, {} as { [key: number]: boolean });
+        setIsAskedInputs(initialIsAsked);
 
         setGroupedQuestions(grouped); 
         setIsLoading(false)
@@ -148,24 +118,11 @@ export default function ApprenticeDetail({ id }: { id: string }) {
       fachbereich: q.question.topic_complex.parent_subject.name,
       themenkomplex: q.question.topic_complex.name,
       comment: q.comment,
+      score: q.score ?? null,
+      isAsked: q.is_asked ?? false,
       difficulty: q.question.difficulty
     }))
   }
-
-  // const addTopic = () => {
-  //   if (newTopic && !apprentice.topics.includes(newTopic)) {
-  //     setApprentice({
-  //       ...apprentice,
-  //       topics: [...apprentice.topics, newTopic],
-  //     })
-  //     setNewTopic("")
-  //   }
-  // }
-
-  // const updateComment = (questionId: number, comment: string) => {
-  //   // setAssignedQuestions(assignedQuestions.map((q) => (q.id === questionId ? { ...q, comment } : q)))
-  //   setSaveStatus((prev) => ({ ...prev, [questionId]: "saving" }))
-  // }
 
   const [text, setText] = useState("");
 
@@ -189,8 +146,6 @@ export default function ApprenticeDetail({ id }: { id: string }) {
   };
 
   const updateComment = async (questionId: number, comment: string) => {
-    console.log("Updating comment for question", questionId)
-    console.log("questions:", questions)
     setQuestions((prevQuestions) =>
       prevQuestions.map((q) =>
         q.id === questionId ? { ...q, comment } : q
@@ -203,10 +158,8 @@ export default function ApprenticeDetail({ id }: { id: string }) {
       const response = await fetch(`/api/question/${questionId}/comment`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ comment }),
+        body: JSON.stringify({ comment, apprenticeId: id }),
       });
-
-      console.log("Response:", response)
   
       if (!response.ok) {
         throw new Error("Failed to save comment");
@@ -224,30 +177,37 @@ export default function ApprenticeDetail({ id }: { id: string }) {
       setSaveStatus((prev) => ({ ...prev, [questionId]: "error" }));
     }
   };
+
+  const updateScore = async (questionId: number, score: number | null) => {
+    setScoreInputs((prev) => ({ ...prev, [questionId]: score }));
+    try {
+      const response = await fetch(`/api/question/${questionId}/comment`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ score, apprenticeId: id }),
+      });
+      if (!response.ok) throw new Error("Failed to save score");
+    } catch (error) {
+      console.error("Error saving score:", error);
+    }
+  };
+
+  const updateIsAsked = async (questionId: number, isAsked: boolean) => {
+    setIsAskedInputs((prev) => ({ ...prev, [questionId]: isAsked }));
+    try {
+      const response = await fetch(`/api/question/${questionId}/comment`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isAsked, apprenticeId: id }),
+      });
+      if (!response.ok) throw new Error("Failed to save is_asked");
+    } catch (error) {
+      console.error("Error saving is_asked:", error);
+    }
+  };
   
-
-  // useEffect(() => {
-  //   const saveComments = async () => {
-  //     for (const questionId of Object.keys(saveStatus)) {
-  //       if (saveStatus[Number(questionId)] === "saving") {
-  //         try {
-  //           // Simulating an API call
-  //           await new Promise((resolve) => setTimeout(resolve, 1000))
-  //           setSaveStatus((prev) => ({ ...prev, [questionId]: "saved" }))
-  //         } catch (error) {
-  //           console.error("Error saving comment:", error)
-  //           setSaveStatus((prev) => ({ ...prev, [questionId]: "error" }))
-  //         }
-  //       }
-  //     }
-  //   }
-
-  //   saveComments()
-  // }, [saveStatus])
 
   const groupQuestions = (questions: Question[]): GroupedQuestions => {
-    console.log("Grouping questions:", questions);
-  
     const grouped = questions.reduce((acc, question) => {
       if (!acc[question.fachbereich]) {
         acc[question.fachbereich] = {};
@@ -268,14 +228,20 @@ export default function ApprenticeDetail({ id }: { id: string }) {
   };
   
 
-  // const groupedQuestions = groupQuestions(assignedQuestions)
-
-  // let uniqueThemenkomplexe = new Set(assignedQuestions.map((q) => q.themenkomplex))
-
-  const handleEditSubmit = (updatedApprentice: typeof apprentice) => {
-    setApprentice(updatedApprentice)
-    setIsEditFormOpen(false)
-    // In a real application, you would also send this data to your backend
+  const handleEditSubmit = async (formData: import("@/app/model/Apprentice").ApprenticeOverviewForm) => {
+    try {
+      const response = await fetch(`/api/apprentice/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+      if (!response.ok) throw new Error("Failed to update apprentice")
+      const updated = await response.json()
+      setApprentice(updated)
+      setIsEditFormOpen(false)
+    } catch (error) {
+      console.error("Error updating apprentice:", error)
+    }
   }
 
   const unassignQuestion = async (questionId: number) => {
@@ -287,12 +253,9 @@ export default function ApprenticeDetail({ id }: { id: string }) {
   
       if (!response.ok) throw new Error("Failed to unassign question");
   
-      // setAssignedQuestions(assignedQuestions.filter(q => q.id !== questionId));
       setQuestions((prevQuestions) => {
         const updatedQuestions = prevQuestions.filter((q) => q.question.id !== questionId)
-        console.log("Updated questions:", updatedQuestions)
         const newGroupedQuestions = { ...groupQuestions(mapQuestions(updatedQuestions)) }
-        console.log("New grouped questions:", newGroupedQuestions)
         setGroupedQuestions(newGroupedQuestions)
         return updatedQuestions
       })
@@ -308,13 +271,13 @@ export default function ApprenticeDetail({ id }: { id: string }) {
   return (
     <FeatureWrapper
           featureKey="apprentice-detail"
-          title="Apprentice Site"
-          description="Here you'll be able to save your apprentice!"
+          title="Lernende"
+          description="Hier können Sie Ihre Lernenden verwalten!"
         >
       <div className="container mx-auto px-4 py-8">
         <Breadcrumb
           items={[
-            { name: "Apprentices", href: "/apprentices" },
+            { name: "Lernende", href: "/apprentices" },
             { name: apprentice.first_name + " " + apprentice.last_name, href: `/apprentices/${apprentice.id}` },
           ]}
         />
@@ -324,16 +287,18 @@ export default function ApprenticeDetail({ id }: { id: string }) {
                     variant={apprentice.expert_role == "Hauptexperte" ? "destructive" : null}
                     className="ml-2"
                   >{apprentice.expert_role}</Badge></h1>
-          <Button onClick={() => setIsEditFormOpen(true)}>
-            <Edit className="w-4 h-4 mr-2" />
-            Edit Apprentice
-          </Button>
+          {!isDemoMode && (
+            <Button onClick={() => setIsEditFormOpen(true)}>
+              <Edit className="w-4 h-4 mr-2" />
+              Lernende/r bearbeiten
+            </Button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
           <Card>
             <CardHeader>
-              <CardTitle>Apprentice Information</CardTitle>
+              <CardTitle>Informationen zum Lernenden</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -342,62 +307,43 @@ export default function ApprenticeDetail({ id }: { id: string }) {
                   <span>{apprentice.address_link}</span>
                 </div>
                 <div>
-                  <strong>Project Title:</strong> {apprentice.project_title}
+                  <strong>Projekttitel:</strong> {apprentice.project_title}
                 </div>
                 <div>
-                  <strong>Project Description:</strong> {apprentice.project_short_description}
+                  <strong>Projektbeschreibung:</strong> {apprentice.project_short_description}
                 </div>
                 <div>
-                  <strong>Your Role:</strong> {apprentice.expert_role}
+                  <strong>Ihre Rolle:</strong> {apprentice.expert_role}
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Work Location</CardTitle>
+              <CardTitle>Arbeitsort</CardTitle>
             </CardHeader>
             <CardContent>
               <Button variant="outline" asChild className="w-full">
                 <a href={getGoogleMapsUrl(apprentice.address_link)} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="w-4 h-4 mr-2" />
-                  Open in Google Maps
+                  In Google Maps öffnen
                 </a>
               </Button>
             </CardContent>
           </Card>
         </div>
 
-          {/* Disabled for now - lets see if we want to use it later on
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Project Topics</h2>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {apprentice.projectTopics.map((topic) => (
-              <Badge key={topic}>{topic}</Badge>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <Input
-              type="text"
-              placeholder="Add new topic"
-              value={newTopic}
-              onChange={(e) => setNewTopic(e.target.value)}
-            />
-            <Button onClick={addTopic}>Add Topic</Button>
-          </div>
-        </div>  */}
-
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Themenkomplex Overview</h2>
+          <h2 className="text-2xl font-semibold mb-4">Themenkomplex Übersicht</h2>
           <div className="flex justify-between items-center mb-2">
-            <span>Total Themenkomplexe: {themenkomplexCount} / 6</span>
-            <span className="text-sm text-muted-foreground">{themenkomplexProgress.toFixed(0)}% Complete</span>
+            <span>Themenkomplexe gesamt: {themenkomplexCount} / 6</span>
+            <span className="text-sm text-muted-foreground">{themenkomplexProgress.toFixed(0)}% Abgeschlossen</span>
           </div>
           <Progress value={themenkomplexProgress} className="mb-4" />
         </div>
 
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Assigned Questions</h2>
+          <h2 className="text-2xl font-semibold mb-4">Zugewiesene Fragen</h2>
           {Object.entries(groupedQuestions).map(([fachbereich, themenkomplexe]) => (
             <div key={fachbereich} className="mb-6">
               <h3 className="text-xl font-semibold mb-4">{fachbereich}</h3>
@@ -413,7 +359,10 @@ export default function ApprenticeDetail({ id }: { id: string }) {
                           <span>{themenkomplex}</span>
                         </AccordionTrigger>
                         <div className="flex items-center gap-4 px-4">
-                          <span className="text-sm text-muted-foreground">Questions: {questionCount} / 5</span>
+                          <span className="text-sm text-muted-foreground">Fragen: {questionCount} / 5</span>
+                          <span className="text-sm text-muted-foreground">
+                            Bewertung: {questions.reduce((sum, q) => sum + (scoreInputs[q.id] ?? 0), 0)} / {questions.length * 2} Punkte
+                          </span>
         
                                 <PDFGenerator fachbereich={fachbereich} themenkomplex={themenkomplex} questions={questions}/>
                                 {/* <FileDown className="w-4 h-4 mr-2" /> */}
@@ -423,13 +372,22 @@ export default function ApprenticeDetail({ id }: { id: string }) {
                         <Progress value={questionProgress} className="mb-4" />
                         <div className="space-y-4">
                           {questions.map((question) => (
-                            <Card key={question.id}>
+                            <Card key={question.id} className={isAskedInputs[question.id] ? "border-l-4 border-l-green-500" : ""}>
                               <CardHeader>
                                 <CardTitle className="text-lg">{question.question}</CardTitle>
                                 <div className="flex items-center gap-2">
                                   <Badge className={`${question.difficulty.color} text-white`}>
                                     {question.difficulty.name}
                                   </Badge>
+                                  <label className="flex items-center gap-2 text-sm">
+                                    <input
+                                      type="checkbox"
+                                      checked={isAskedInputs[question.id] ?? false}
+                                      onChange={(e) => updateIsAsked(question.id, e.target.checked)}
+                                      className="h-4 w-4 rounded border-gray-300"
+                                    />
+                                    Gefragt
+                                  </label>
                                   <TooltipProvider>
                                     <Tooltip>
                                       <TooltipTrigger asChild>
@@ -443,7 +401,7 @@ export default function ApprenticeDetail({ id }: { id: string }) {
                                         </Button>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p>Unassign question</p>
+                                        <p>Frage entfernen</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   </TooltipProvider>
@@ -451,15 +409,35 @@ export default function ApprenticeDetail({ id }: { id: string }) {
                               </CardHeader>
                               <CardContent>
                                 <p className="mb-4 whitespace-pre-wrap">{question.answer}</p>
+                                <div className="flex items-center gap-4 mb-3">
+                                  <span className="text-sm font-medium">Bewertung:</span>
+                                  {[
+                                    { value: null, label: "--" },
+                                    { value: 0, label: "0 - Nicht beantwortet" },
+                                    { value: 1, label: "1 - Teilweise korrekt" },
+                                    { value: 2, label: "2 - Korrekt" },
+                                  ].map((option) => (
+                                    <label key={String(option.value)} className="flex items-center gap-1 text-sm">
+                                      <input
+                                        type="radio"
+                                        name={`score-${question.id}`}
+                                        checked={scoreInputs[question.id] === option.value}
+                                        onChange={() => updateScore(question.id, option.value)}
+                                        className="h-4 w-4"
+                                      />
+                                      {option.label}
+                                    </label>
+                                  ))}
+                                </div>
                                 <div className="relative">
                                   <Textarea
-                                    placeholder="Add a comment about the apprentice's answer"
+                                    placeholder="Kommentar zur Antwort des Lernenden"
                                     value={textInputs[question.id] ?? ""}
                                     onChange={(e) => handleDebouncedChange(question.id, e)}
                                     className="mb-4 pr-10"
                                   />
                                   <div className="absolute right-2 top-2">
-                                    {saveStatus[question.id] === "saving" && <>Saving...</>}
+                                    {saveStatus[question.id] === "saving" && <>Speichern...</>}
                                     {saveStatus[question.id] === "saved" && <Save className="w-4 h-4 text-green-500" />}
                                     {saveStatus[question.id] === "error" && <Save className="w-4 h-4 text-red-500" />}
                                   </div>
@@ -477,19 +455,34 @@ export default function ApprenticeDetail({ id }: { id: string }) {
           ))}
         </div>
 
-        <div className="mt-8">
-          <Button asChild>
-            <Link href={`/questions?apprenticeId=${apprentice.id}`}>Browse All Questions</Link>
-          </Button>
+        <div className="mt-8 flex gap-4">
+          <ApprenticePDFGenerator
+            apprentice={apprentice}
+            groupedQuestions={groupedQuestions}
+            scoreInputs={scoreInputs}
+            isAskedInputs={isAskedInputs}
+            textInputs={textInputs}
+          />
         </div>
+      </div>
 
-        {/* <ApprenticeForm
-          apprentice={apprentice}
+      {!isDemoMode && (
+        <ApprenticeForm
+          apprentice={{
+            firstName: apprentice.first_name,
+            lastName: apprentice.last_name,
+            workLocation: apprentice.address_link || "",
+            projectTitle: apprentice.project_title || "",
+            projectDescription: apprentice.project_short_description || "",
+            expertRole: apprentice.expert_role,
+            projectTopics: apprentice.topics || [],
+            isActive: (apprentice as any).is_active ?? true,
+          }}
           isOpen={isEditFormOpen}
           onClose={() => setIsEditFormOpen(false)}
           onSubmit={handleEditSubmit}
-        /> */}
-      </div>
+        />
+      )}
     </FeatureWrapper>
   )
 }

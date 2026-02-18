@@ -9,12 +9,9 @@ export async function GET(
   try {
     const { slug } = await params;
 
-    console.log('slug: ', slug);
-
     if (!slug) {
       return NextResponse.json({ error: 'Slug is required' }, { status: 400 });
     }
-    console.log("Extracted slug:", slug);
 
     const supabase = await createClient();
     const { data, error } = await supabase

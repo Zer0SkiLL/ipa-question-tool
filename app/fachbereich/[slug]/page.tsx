@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useCallback, useEffect, useState } from "react"
+import { use, useState } from "react"
 import Link from "next/link"
 import { PlusCircle, Edit, Trash2 } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -23,92 +23,33 @@ import {
 import { Breadcrumb } from "@/components/Breadcrumb"
 import AddTopicForm from "@/components/AddTopicForm"
 import { Themenkomplex } from "../../model/Themenkomplex"
-import { Fachbereich } from "@/app/model/Fachbereich"
 import { EditTopicForm } from "@/components/EditTopicForm"
+import { useSubjectBySlug } from "@/hooks/use-subject-by-slug"
+import { useTopicsBySubject } from "@/hooks/use-topics-by-subject"
 
 export default function FachbereichPage({ params }: { params: Promise<{ slug: string }> }) {
-  // const [slugParam, setSlugParam] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false);
-  // const [themenkomplexe, setThemenkomplexe] = useState<Themenkomplex[]>([])
-  const [topics, setTopics] = useState<Themenkomplex[]>([])
-  const [currentSubject, setCurrentSubject] = useState<Fachbereich | null>(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [currentThemenkomplex, setCurrentThemenkomplex] = useState<Themenkomplex | null>(null)
-  // const [newThemenkomplex, setNewThemenkomplex] = useState<Omit<Themenkomplex, "id">>({
-  //   name: "",
-  //   description: "",
-  //   slug: "",
-  // })
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   const { slug } = use(params);
 
-  // useEffect(() => {
-  //   if (slug) {
-  //     setSlugParam(slug);
-  //   }
-  // }, [slug]);
-
-  useEffect(() => {
-    if (!slug) return;
-  
-    const getSubjectBySlug = async () => {
-      try {
-        const res = await fetch(`/api/subject_area/slug/${slug}`,);
-        const data = await res.json();
-        setCurrentSubject(data);
-        console.log("fetch subjects by slug", data);
-      } catch (error) {
-        console.error("Error fetching subject:", error);
-      }
-    };
-  
-    getSubjectBySlug();
-  }, [slug]);
-
-  const refreshTopics = useCallback(async () => {
-    if (!currentSubject) return;
-  
-    console.log("Refreshing topics...");
-    console.log("Current subject:", currentSubject);
-    setLoading(true);
-  
-    try {
-      const res = await fetch(`/api/topic_complex/subject/${currentSubject.id}`);
-      const data = await res.json();
-      setTopics(data);
-      console.log("Fetched topics:", data);
-    } catch (error) {
-      console.error("Error fetching topics:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentSubject]); // Dependencies
-  
-  useEffect(() => {
-    if (currentSubject) {
-      refreshTopics();
-    }
-  }, [currentSubject, refreshTopics]);
+  const { subject: currentSubject } = useSubjectBySlug(slug)
+  const { topics, isLoading: loading, mutate: mutateTopics } = useTopicsBySubject(currentSubject?.id ?? null)
 
   const fachbereichName = slug
     ? slug.replace(/-/g, " ")
         .split(" ")
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join(" ")
-    : "Loading..."
-
-
+    : "Laden..."
 
   const handleAddTopic = async (formData: { name: string; description: string, slug: string }) => {
-    if (!currentSubject) {
-      console.error("No subject selected");
-      return;
-    }
+    if (!currentSubject) return;
 
     try {
-      // Combine the form data with the subject ID here
       const topicData = {
         ...formData,
         parent_subject: currentSubject.id
@@ -120,13 +61,9 @@ export default function FachbereichPage({ params }: { params: Promise<{ slug: st
         body: JSON.stringify(topicData),
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to add topic");
-      }
+      if (!res.ok) throw new Error("Failed to add topic");
 
-      const newTopic = await res.json();
-      console.log("Topic added:", newTopic);
-      refreshTopics();
+      mutateTopics();
       setIsAddOpen(false);
     } catch (error) {
       console.error("Error adding topic:", error);
@@ -134,10 +71,7 @@ export default function FachbereichPage({ params }: { params: Promise<{ slug: st
   };
 
   const handleEditTopic = async (formData: { name: string; description: string, slug: string }) => {
-    if (!currentThemenkomplex) {
-      console.error("No topic selected for editing");
-      return;
-    }
+    if (!currentThemenkomplex) return;
 
     try {
       const res = await fetch(`/api/topic_complex/${currentThemenkomplex.id}`, {
@@ -150,60 +84,32 @@ export default function FachbereichPage({ params }: { params: Promise<{ slug: st
         }),
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to update topic");
-      }
+      if (!res.ok) throw new Error("Failed to update topic");
 
-      console.log("Topic updated:", currentThemenkomplex.id);
-      refreshTopics();
+      mutateTopics();
       setIsEditOpen(false);
     } catch (error) {
       console.error("Error updating topic:", error);
     }
   };
 
-
-
-  // const handleEditTopic = async (topicData: any) => {
-  //   try {
-  //     const res = await fetch(`/api/topic_complex/${topicData.id}`, {
-  //       method: "PATCH",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify(topicData),
-  //     });
-
-  //     if (!res.ok) {
-  //       throw new Error("Failed to update topic");
-  //     }
-
-  //     console.log("Topic updated:", topicData.id);
-  //     refreshTopics();
-  //     setIsEditOpen(false);
-  //   } catch (error) {
-  //     console.error("Error updating topic:", error);
-  //   }
-  // };
-
   const handleDeleteTopic = async () => {
     try {
-      setLoading(true);
+      setDeleteLoading(true);
       if (currentThemenkomplex) {
         const res = await fetch(`/api/topic_complex/${currentThemenkomplex.id}`, {
           method: "DELETE",
         });
         
-        if (!res.ok) {
-          throw new Error("Failed to delete topic");
-        }
+        if (!res.ok) throw new Error("Failed to delete topic");
         
-        console.log("Deleted topic:", currentThemenkomplex.id);
         setCurrentThemenkomplex(null);
-        refreshTopics();
+        mutateTopics();
       }
     } catch (error) {
       console.error("Error deleting topic:", error);
     } finally {
-      setLoading(false);
+      setDeleteLoading(false);
       setIsDeleteOpen(false);
     }
   };
@@ -213,22 +119,21 @@ export default function FachbereichPage({ params }: { params: Promise<{ slug: st
       {slug ? (
         <Breadcrumb items={[{ name: fachbereichName, href: `/fachbereich/${slug}` }]} />
       ) : (
-        <p>Loading...</p>
+        <p>Laden...</p>
       )}
 
       <div className="flex justify-between items-center my-8">
         <div className="flex flex-col">
-          <h1 className="text-4xl font-bold">Topics</h1>
+          <h1 className="text-4xl font-bold">Themenkomplexe</h1>
           <h2 className="text-2xl font-semibold">{fachbereichName}</h2>
         </div>
         <Button onClick={() => setIsAddOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add Themenkomplex
+          <PlusCircle className="mr-2 h-4 w-4" /> Themenkomplex hinzufügen
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {loading ? (
-        // Skeleton Loading
         [...Array(3)].map((_, index) => (
           <div key={index} className="p-4 border rounded-lg animate-pulse">
             <div className="h-6 bg-gray-300 rounded w-3/4 mb-2"></div>
@@ -269,15 +174,15 @@ export default function FachbereichPage({ params }: { params: Promise<{ slug: st
           </Card>
           ))
         ) : (
-          <p>No topics found.</p>
+          <p>Keine Themen gefunden.</p>
       )}
       </div>
 
       <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Add New Themenkomplex</SheetTitle>
-            <SheetDescription>Enter the details for the new Themenkomplex.</SheetDescription>
+            <SheetTitle>Neuen Themenkomplex hinzufügen</SheetTitle>
+            <SheetDescription>Geben Sie die Details für den neuen Themenkomplex ein.</SheetDescription>
           </SheetHeader>
           {currentSubject && (
           <AddTopicForm 
@@ -290,8 +195,8 @@ export default function FachbereichPage({ params }: { params: Promise<{ slug: st
       <Sheet open={isEditOpen} onOpenChange={setIsEditOpen}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Edit Themenkomplex</SheetTitle>
-            <SheetDescription>Modify the details of the Themenkomplex.</SheetDescription>
+            <SheetTitle>Themenkomplex bearbeiten</SheetTitle>
+            <SheetDescription>Bearbeiten Sie die Details des Themenkomplexes.</SheetDescription>
           </SheetHeader>
           {currentThemenkomplex && (
           <EditTopicForm 
@@ -305,17 +210,17 @@ export default function FachbereichPage({ params }: { params: Promise<{ slug: st
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Are you sure you want to delete the Themenkomplex {currentThemenkomplex?.name} ?</DialogTitle>
+            <DialogTitle>Möchten Sie wirklich den Themenkomplex löschen {currentThemenkomplex?.name} ?</DialogTitle>
             <DialogDescription>
-              This action cannot be undone. This will permanently delete the Themenkomplex and all associated data.
+              Diese Aktion kann nicht rückgängig gemacht werden. Der Themenkomplex und alle zugehörigen Daten werden dauerhaft gelöscht.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteOpen(false)} disabled={loading}>
-              Cancel
+            <Button variant="outline" onClick={() => setIsDeleteOpen(false)} disabled={deleteLoading}>
+              Abbrechen
             </Button>
-            <Button variant="destructive" onClick={handleDeleteTopic} disabled={loading}>
-              {loading ? "Deleting..." : "Delete"}
+            <Button variant="destructive" onClick={handleDeleteTopic} disabled={deleteLoading}>
+              {deleteLoading ? "Wird gelöscht..." : "Löschen"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -323,4 +228,3 @@ export default function FachbereichPage({ params }: { params: Promise<{ slug: st
     </div>
   )
 }
-

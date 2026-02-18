@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { handleError } from '@/utils/errorHandler';
+import { checkDemoRestriction } from '@/utils/demo-guard';
 
 
 export async function GET() {
@@ -26,6 +27,9 @@ export async function GET() {
   export async function POST(req: NextRequest) {
     const supabase = await createClient();
     try {
+      const demoBlock = await checkDemoRestriction();
+      if (demoBlock) return demoBlock;
+
       const {
           data: { user },
       } = await supabase.auth.getUser()

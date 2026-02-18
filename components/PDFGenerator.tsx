@@ -39,7 +39,7 @@ const PDFGenerator: React.FC<PDFGeneratorProps> = ({ fachbereich, themenkomplex,
 
     // Generate the table
     autoTable(pdf, {
-      head: [['Question', 'Answer', 'Comment']],
+      head: [['Frage', 'Antwort', 'Kommentar']],
       body: dataBody,
       startY: 35,
       rowPageBreak: 'auto',
@@ -90,7 +90,7 @@ const PDFGenerator: React.FC<PDFGeneratorProps> = ({ fachbereich, themenkomplex,
       onClick={generatePDF}
       >
         <FileDown className="w-4 h-4 mr-2" />
-      Generate PDF
+      PDF erstellen
     </Button>
   );
 };

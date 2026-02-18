@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { handleError } from '@/utils/errorHandler';
+import { checkDemoRestriction } from '@/utils/demo-guard';
 
 export async function GET(
   req: NextRequest, 
@@ -29,6 +30,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const demoBlock = await checkDemoRestriction();
+        if (demoBlock) return demoBlock;
+
         const { id } = await params;
         const supabase = await createClient();
         const body = await req.json();
@@ -59,6 +63,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const demoBlock = await checkDemoRestriction();
+    if (demoBlock) return demoBlock;
+
     const { id } = await params;
     const supabase = await createClient();
     const { data, error } = await supabase

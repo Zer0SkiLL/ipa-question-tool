@@ -1,9 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { Search, PlusCircle, Edit, Trash2 } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { useState } from "react"
+import { PlusCircle, Edit, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import SearchAutocomplete from "@/components/SearchAutocomplete"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import {
   Sheet,
@@ -21,9 +21,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import Link from "next/link"
-import { z } from "zod";
 import AddSubjectForm from "@/components/AddSubjectForm"
 import EditSubjectForm from "@/components/EditSubjectForm"
+import { useDemoMode } from "@/components/DemoModeProvider"
+import { useSubjects } from "@/hooks/use-subjects"
 
 interface Fachbereich {
   id: string
@@ -32,41 +33,14 @@ interface Fachbereich {
   slug: string
 }
 
-
-
 export default function Home() {
-  // const [fachbereiche, setFachbereiche] = useState<Fachbereich[]>(initialFachbereiche)
-  const [loading, setLoading] = useState(false);
-  const [subjects, setSubjects] = useState<Fachbereich[]>([])
+  const isDemoMode = useDemoMode()
+  const { subjects, isLoading: loading, mutate } = useSubjects()
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [currentFachbereich, setCurrentFachbereich] = useState<Fachbereich | null>(null)
-  // const [newFachbereich, setNewFachbereich] = useState<Omit<Fachbereich, "id">>({ name: "", description: "", slug: "" })
-
-  const refreshSubjects = async () => {
-    try {
-      setLoading(true);
-      const res = await fetch("/api/subject_area");
-      const data = await res.json();
-      setSubjects(data);
-    } catch (error) {
-      console.error("Error fetching subjects:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  useEffect(() => {
-    refreshSubjects();
-  }, []);
-
-  // const handleAddSubject = () => {
-  //   const id = (fachbereiche.length + 1).toString()
-  //   setFachbereiche([...fachbereiche, { id, ...newFachbereich }])
-  //   setNewFachbereich({ name: "", description: "", slug: "" })
-  //   setIsAddOpen(false)
-  // }
 
   const handleAddSubject = async (subjectData: { name: string; description: string; slug: string}) => {
     try {
@@ -80,9 +54,7 @@ export default function Home() {
         throw new Error("Failed to add subject");
       }
 
-      const newSubject = await res.json();
-      console.log("Subject added:", newSubject);
-      refreshSubjects(); // Refresh the list
+      mutate();
     } catch (error) {
       console.error("Error adding subject:", error);
     }
@@ -102,10 +74,7 @@ export default function Home() {
         throw new Error("Failed to update subject");
       }
 
-      const updatedSubject = await res.json();
-      console.log("Subject updated:", updatedSubject);
-      // refreshSubjects(); // Refresh the list
-      setSubjects(prev => prev.map(q => q.id === currentFachbereich?.id ? updatedSubject : q))
+      mutate();
     } catch (error) {
       console.error("Error updating subject:", error);
     } finally {
@@ -113,26 +82,10 @@ export default function Home() {
     }
   }
 
-  // const handleEdit = () => {
-  //   if (currentFachbereich) {
-  //     setFachbereiche(fachbereiche.map((f) => (f.id === currentFachbereich.id ? currentFachbereich : f)))
-  //     setIsEditOpen(false)
-  //   }
-  // }
-
-  // const handleDelete = () => {
-  //   if (currentFachbereich) {
-  //     setFachbereiche(fachbereiche.filter((f) => f.id !== currentFachbereich.id))
-  //     setIsDeleteOpen(false)
-  //   }
-  // }
-
   const handleDelete = async () => {
     try {
-      setLoading(true);
+      setIsDeleting(true);
       if (currentFachbereich) {
-        // setFachbereiche(fachbereiche.filter((f) => f.id !== currentFachbereich.id))
-        
         const res = await fetch(`/api/subject_area/${currentFachbereich?.id}`, {
           method: "DELETE",
         });
@@ -141,37 +94,33 @@ export default function Home() {
           throw new Error("Failed to delete subject");
         }
         
-        console.log("Deleted subject:", currentFachbereich?.id);
         setCurrentFachbereich(null)
-        refreshSubjects(); // Refresh the list
+        mutate();
       }
     } catch (error) {
       console.error("Error deleting subject:", error);
     } finally {
-      setLoading(false);
+      setIsDeleting(false);
       setIsDeleteOpen(false)
     }
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-8">IT Apprentice Exam Questions</h1>
+      <h1 className="text-4xl font-bold mb-8">IPA Fachgespräch Fragen-Tool</h1>
 
       <div className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4">Search Questions</h2>
-        <div className="flex gap-2">
-          <Input type="text" placeholder="Enter keywords..." className="flex-grow" />
-          <Button>
-            <Search className="mr-2 h-4 w-4" /> Search
-          </Button>
-        </div>
+        <h2 className="text-2xl font-semibold mb-4">Fragen suchen</h2>
+        <SearchAutocomplete />
       </div>
 
       <div className="mb-4 flex justify-between items-center">
-        <h2 className="text-2xl font-semibold">Browse by Fachbereich</h2>
+        <h2 className="text-2xl font-semibold">Nach Fachbereich durchsuchen</h2>
+        {!isDemoMode && (
         <Button onClick={() => setIsAddOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add Fachbereich
+          <PlusCircle className="mr-2 h-4 w-4" /> Fachbereich hinzufügen
         </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -193,6 +142,7 @@ export default function Home() {
                 <CardTitle>{fachbereich.name}</CardTitle>
                 <CardDescription>{fachbereich.description}</CardDescription>
               </CardHeader>
+              {!isDemoMode && (
               <div className="absolute top-2 right-2 flex gap-2 z-20">
                 <Button
                   variant="ghost"
@@ -217,121 +167,33 @@ export default function Home() {
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
+              )}
             </Card>
           ))
         ) : (
-          <p>No topics found.</p>
+          <p>Keine Themen gefunden.</p>
         )}
       </div>
 
+      {!isDemoMode && (
       <Sheet open={isAddOpen} onOpenChange={setIsAddOpen}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Add New Fachbereich</SheetTitle>
-            <SheetDescription>Enter the details for the new Fachbereich.</SheetDescription>
+            <SheetTitle>Neuen Fachbereich hinzufügen</SheetTitle>
+            <SheetDescription>Geben Sie die Details für den neuen Fachbereich ein.</SheetDescription>
           </SheetHeader>
-          {/* <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="name"
-                value={newFachbereich.name}
-                onChange={(e) => setNewFachbereich({ ...newFachbereich, name: e.target.value })}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <Input
-                id="description"
-                value={newFachbereich.description}
-                onChange={(e) => setNewFachbereich({ ...newFachbereich, description: e.target.value })}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="slug" className="text-right">
-                Slug
-              </Label>
-              <Input
-                id="slug"
-                value={newFachbereich.slug}
-                onChange={(e) => setNewFachbereich({ ...newFachbereich, slug: e.target.value })}
-                className="col-span-3"
-              />
-            </div>
-          </div> */}
-          {/* <AddSubjectForm
-            onSuccess={() => {
-              setIsAddOpen(false);
-              refreshSubjects(); // Refresh after successful creation
-            }}
-          /> */}
           <AddSubjectForm onAdd={handleAddSubject} />
-          {/* <SheetFooter>
-            <SheetClose asChild>
-              <Button type="submit" onClick={handleAdd}>
-                Save
-              </Button>
-            </SheetClose>
-          </SheetFooter> */}
         </SheetContent>
       </Sheet>
+      )}
 
+      {!isDemoMode && (
       <Sheet open={isEditOpen} onOpenChange={setIsEditOpen}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>Edit Fachbereich</SheetTitle>
-            <SheetDescription>Modify the details of the Fachbereich.</SheetDescription>
+            <SheetTitle>Fachbereich bearbeiten</SheetTitle>
+            <SheetDescription>Bearbeiten Sie die Details des Fachbereichs.</SheetDescription>
           </SheetHeader>
-          {/* <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-name" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="edit-name"
-                value={currentFachbereich?.name}
-                onChange={(e) => setCurrentFachbereich((curr) => (curr ? { ...curr, name: e.target.value } : null))}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-description" className="text-right">
-                Description
-              </Label>
-              <Input
-                id="edit-description"
-                value={currentFachbereich?.description}
-                onChange={(e) =>
-                  setCurrentFachbereich((curr) => (curr ? { ...curr, description: e.target.value } : null))
-                }
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-slug" className="text-right">
-                Slug
-              </Label>
-              <Input
-                id="edit-slug"
-                value={currentFachbereich?.slug}
-                onChange={(e) => setCurrentFachbereich((curr) => (curr ? { ...curr, slug: e.target.value } : null))}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-          <SheetFooter>
-            <SheetClose asChild>
-              <Button type="submit" onClick={handleEdit}>
-                Save Changes
-              </Button>
-            </SheetClose>
-          </SheetFooter> */}
           {currentFachbereich && (
             <EditSubjectForm 
               subject={currentFachbereich} 
@@ -340,26 +202,28 @@ export default function Home() {
           )}
         </SheetContent>
       </Sheet>
+      )}
 
+      {!isDemoMode && (
       <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Are you sure you want to delete {currentFachbereich?.name} Fachbereich?</DialogTitle>
+            <DialogTitle>Möchten Sie den Fachbereich {currentFachbereich?.name} wirklich löschen?</DialogTitle>
             <DialogDescription>
-              This action cannot be undone. This will permanently delete the Fachbereich and all associated data.
+              Diese Aktion kann nicht rückgängig gemacht werden. Der Fachbereich und alle zugehörigen Daten werden dauerhaft gelöscht.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteOpen(false)} disabled={loading}>
-              Cancel
+            <Button variant="outline" onClick={() => setIsDeleteOpen(false)} disabled={isDeleting}>
+              Abbrechen
             </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={loading}>
-              {loading ? "Deleting..." : "Delete"}
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? "Wird gelöscht..." : "Löschen"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      )}
     </div>
   )
 }
-
