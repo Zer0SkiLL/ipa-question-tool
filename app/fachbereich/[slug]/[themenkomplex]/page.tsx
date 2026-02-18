@@ -27,48 +27,46 @@ import EditQuestionForm from "@/components/EditQuestionForm"
 import { ApprenticeSelector } from "@/components/ApprenticeSelector"
 import { toast } from "sonner"
 import { useDemoMode } from "@/components/DemoModeProvider"
-
-
+import { useQuestionsByTopic } from "@/hooks/use-questions-by-topic"
 
 export default function ThemenkomplexPage({ params }: { params: Promise<{ slug: string; themenkomplex: string }> }) {
   const isDemoMode = useDemoMode()
   const [expandedQuestions, setExpandedQuestions] = useState<number[]>([])
   const [isApprenticeSelectorOpen, setIsApprenticeSelectorOpen] = useState(false)
-  const [questions, setQuestions] = useState<Question[]>([])
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null)
   const [subjectSlug, setSubjectSlug] = useState<string | null>(null)
   const [topicSlug, setTopicSlug] = useState<string | null>(null)
-  const [topicId, setTopicId] = useState<string | null>(null)
   const [fachbereichName, setFachbereichName] = useState<string>("")
   const [themenkomplexName, setThemenkomplexName] = useState<string>("")
-  const [loading, setLoading] = useState(false);
+  const [mutationLoading, setMutationLoading] = useState(false)
   const [assignedApprentices, setAssignedApprentices] = useState<number[]>([])
 
+  const { questions, topicId, isLoading: loading, mutate: mutateQuestions } = useQuestionsByTopic(topicSlug)
 
-useEffect(() => {
-  if (!isApprenticeSelectorOpen) return
+  useEffect(() => {
+    if (!isApprenticeSelectorOpen) return
 
-  const fetchAssignedApprentices = async () => {
-    try {
-      const response = await fetch(`/api/assigned-apprentices/${currentQuestion?.id}`)
-      if (!response.ok) throw new Error("Failed to fetch assigned apprentices")
-      const data = await response.json()
-      if (data) {
-        const apprenticeIds = data.map((apprentice: any) => apprentice.apprentice_id) // Extract apprentice IDs
-        setAssignedApprentices(apprenticeIds) // Store assigned apprentice IDs
+    const fetchAssignedApprentices = async () => {
+      try {
+        const response = await fetch(`/api/assigned-apprentices/${currentQuestion?.id}`)
+        if (!response.ok) throw new Error("Failed to fetch assigned apprentices")
+        const data = await response.json()
+        if (data) {
+          const apprenticeIds = data.map((apprentice: any) => apprentice.apprentice_id)
+          setAssignedApprentices(apprenticeIds)
+        }
+      } catch (error) {
+        console.error("Error fetching assigned apprentices:", error)
       }
-    } catch (error) {
-      console.error("Error fetching assigned apprentices:", error)
     }
-  }
 
-  fetchAssignedApprentices()
-}, [isApprenticeSelectorOpen, currentQuestion?.id])
+    fetchAssignedApprentices()
+  }, [isApprenticeSelectorOpen, currentQuestion?.id])
 
-  // init param
+  // init params
   useEffect(() => {
     async function fetchParams() {
       const { slug, themenkomplex } = await params;
@@ -96,59 +94,9 @@ useEffect(() => {
     fetchParams();
   }, [params]);
 
-  // get questions by topic
-  useEffect(() => {
-    if (!topicSlug) return;
-
-    setLoading(true);
-
-    const getQuestionByTopic = async () => {
-      try {
-        const res = await fetch(`/api/question/topic/${topicSlug}`);
-        const data = await res.json();
-        setQuestions(data.questions);
-        setTopicId(data.topicId);
-      } catch (error) {
-        console.error("Error fetching questions by topic:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getQuestionByTopic();
-  }, [topicSlug]);
-
-  // once questions are fetched, fetch the subject and topic
-  useEffect(() => {
-
-    if (!subjectSlug || !topicSlug) return;
-
-    const getSubjectBySlug = async () => {
-      try {
-        const res = await fetch(`/api/subject_area/slug/${subjectSlug}`);
-        const data = await res.json();
-      } catch (error) {
-        console.error("Error fetching subject:", error);
-      }
-    }
-
-    const getTopicBySlug = async () => {
-      try {
-        const res = await fetch(`/api/topic_complex/slug/${topicSlug}`);
-        const data = await res.json();
-      } catch (error) {
-        console.error("Error fetching topic:", error);
-      }
-    }
-
-    getSubjectBySlug();
-    getTopicBySlug();
-
-  }, [questions, subjectSlug, topicSlug])
-
   const handleEditQuestion = async (data: { id: number; question: string; answer: string; difficulty: number; tags: string[] }) => {
     try {
-      setLoading(true)
+      setMutationLoading(true)
       const response = await fetch(`/api/question/${data.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -156,21 +104,18 @@ useEffect(() => {
       })
       if (!response.ok) throw new Error("Failed to update question")
 
-      const updatedQuestion = await response.json()
-      
-      // Update the questions list with the edited question
-      setQuestions(prev => prev.map(q => q.id === data.id ? {...q, answer: updatedQuestion.answer, question: updatedQuestion.question, difficulty: updatedQuestion.difficulty, tags: updatedQuestion.tags} : q))
+      mutateQuestions()
       setIsEditOpen(false)
     } catch (error) {
       console.error("Error updating question:", error)
     } finally {
-      setLoading(false)
+      setMutationLoading(false)
     }
   }
 
   const handleAddQuestion = async (data: { question: string; answer: string; difficulty: number; tags: string[] }) => {
     try {
-      setLoading(true)
+      setMutationLoading(true)
       const response = await fetch(`/api/question/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -183,40 +128,34 @@ useEffect(() => {
       })
 
       if (!response.ok) throw new Error("Failed to add question")
-      const newQuestion = await response.json()
-          // Refresh your questions list
-      setQuestions(prev => [...prev, newQuestion])
+
+      mutateQuestions()
       setIsAddOpen(false)
     } catch (error) {
       console.error("Error adding question:", error)
     } finally {
-      setLoading(false)
+      setMutationLoading(false)
     } 
   }
-
-
 
   const handleDeleteQuestion = async () => {
     if (!currentQuestion) return
     
     try {
-      setLoading(true)
+      setMutationLoading(true)
       const response = await fetch(`/api/question/${currentQuestion.id}`, {
         method: "DELETE",
       })
       if (!response.ok) throw new Error("Failed to delete question")
       
-      // Remove the deleted question from the list
-      setQuestions(prev => prev.filter(q => q.id !== currentQuestion.id))
+      mutateQuestions()
       setIsDeleteOpen(false)
     } catch (error) {
       console.error("Error deleting question:", error)
     } finally {
-      setLoading(false)
+      setMutationLoading(false)
     }
   }
-
-  
 
   const toggleQuestion = (id: number) => {
     setExpandedQuestions((prev) => (prev.includes(id) ? prev.filter((qId) => qId !== id) : [...prev, id]))
@@ -228,11 +167,10 @@ useEffect(() => {
   }
 
   const handleApprenticeSelect = async (apprenticeId: number) => {
-    if (assignedApprentices.includes(apprenticeId)) return // Prevent duplicates
-  
+    if (assignedApprentices.includes(apprenticeId)) return
+
     setIsApprenticeSelectorOpen(false)
     
-    // Assign the question to the apprentice
     try {
       await fetch("/api/assigned-apprentices/" + currentQuestion?.id, {
         method: "POST",
@@ -240,7 +178,7 @@ useEffect(() => {
         body: JSON.stringify({ apprenticeId }),
       })
       
-      setAssignedApprentices((prev) => [...prev, apprenticeId]) // Update assigned list
+      setAssignedApprentices((prev) => [...prev, apprenticeId])
       toast("Frage wurde dem Lernenden zugewiesen.")
     } catch (error) {
       console.error("Error assigning question:", error)
@@ -255,16 +193,9 @@ useEffect(() => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tags: updatedTags }),
     })
-    if (!response.ok) {
-      console.error("Failed to update question:", await response.text()); // Log error response
-      throw new Error("Failed to update question");
-    }
+    if (!response.ok) throw new Error("Failed to update question");
 
-    setQuestions(
-      questions.map((q) =>
-        q.id === questionId ? { ...q, tags: updatedTags } : q
-      )
-    );
+    mutateQuestions()
   }
 
   return (
@@ -290,7 +221,6 @@ useEffect(() => {
 
       <div className="space-y-4">
         { loading ? (
-          // Skeleton Loading
           [...Array(3)].map((_, index) => (
             <div key={index} className="p-4 border rounded-lg animate-pulse">
               <div className="h-6 bg-gray-300 rounded w-3/4 mb-2"></div>
@@ -349,8 +279,8 @@ useEffect(() => {
                         size="sm"
                         className="h-4 w-4 p-0"
                         onClick={() => {
-                          const updatedTags = question.tags.filter((b) => b !== tag); // Compute new tags
-                          handleDeleteBadge(question.id, updatedTags); // Pass directly
+                          const updatedTags = question.tags.filter((b) => b !== tag);
+                          handleDeleteBadge(question.id, updatedTags);
                         }}
                       >
                         <X className="h-3 w-3" />
@@ -419,8 +349,6 @@ useEffect(() => {
                 difficulty: currentQuestion.difficulty.id,
                 tags: currentQuestion.tags
               }}
-              
-              
               onEdit={handleEditQuestion}
             />
           )}
@@ -439,11 +367,11 @@ useEffect(() => {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteOpen(false)} disabled={loading}>
+            <Button variant="outline" onClick={() => setIsDeleteOpen(false)} disabled={mutationLoading}>
               Abbrechen
             </Button>
-            <Button variant="destructive" onClick={handleDeleteQuestion} disabled={loading}>
-              {loading ? "Wird gelöscht..." : "Löschen"}
+            <Button variant="destructive" onClick={handleDeleteQuestion} disabled={mutationLoading}>
+              {mutationLoading ? "Wird gelöscht..." : "Löschen"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -453,4 +381,3 @@ useEffect(() => {
 
   )
 }
-
